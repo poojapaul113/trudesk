@@ -183,7 +183,10 @@ installController.install = function () {
 
   async.waterfall(
     [
-      function (next) {
+      function (
+        
+      
+      ) {
         db.init(function (err) {
           return next(err);
         }, conuri);
