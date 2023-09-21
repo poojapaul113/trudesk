@@ -1,7 +1,8 @@
 version: '2.1'
 services:
   trudesk:
-    image: polonel/trudesk:1
+    build:
+      dockerfile: Dockerfile
     restart: always
     ports:
       - "8118:8118"
@@ -21,7 +22,7 @@ services:
     image: mongo:5.0-focal
     restart: always
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - mongo:/var/lib/mongo
       - mongo_data:/data/db:rw

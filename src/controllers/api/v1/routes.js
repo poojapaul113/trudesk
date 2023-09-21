@@ -87,6 +87,7 @@ module.exports = function (middleware, router, controllers) {
   router.get('/api/v1/tickets/deleted', apiv1, isAdmin, apiCtrl.tickets.getDeletedTickets)
   router.post('/api/v1/tickets/deleted/restore', apiv1, isAdmin, apiCtrl.tickets.restoreDeleted)
   router.get('/api/v1/tickets/:uid', apiv1, canUser('tickets:view'), apiCtrl.tickets.single)
+  router.get('/api/v1/ticketDetails/:transaction_id', apiv1, canUser('tickets:view'), apiCtrl.tickets.singleTicketByTransaction)
   router.put('/api/v1/tickets/:id', apiv1, canUser('tickets:update'), apiCtrl.tickets.update)
   router.delete('/api/v1/tickets/:id', apiv1, canUser('tickets:delete'), apiCtrl.tickets.delete)
   router.put('/api/v1/tickets/:id/subscribe', apiv1, apiCtrl.tickets.subscribe)

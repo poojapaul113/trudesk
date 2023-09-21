@@ -13,6 +13,8 @@
  */
 
 const _ = require('lodash')
+const Chance = require('chance')
+
 const nconf = require('nconf')
   .argv()
   .env()
@@ -24,6 +26,8 @@ const middleware = require('./middleware')
 const routes = require('./routes')
 const server = require('http').createServer(WebServer)
 let port = nconf.get('port') || 8118
+const UserSchema = require('./models/user')
+
 
 ;(app => {
   'use strict'
@@ -92,7 +96,8 @@ let port = nconf.get('port') || 8118
     app.use(bodyParser.urlencoded({ extended: false }))
     app.use(bodyParser.json())
 
-    router.get('/healthz', (req, res) => {
+    router.get('/healthz', async (req, res) => {
+
       res.status(200).send('OK')
     })
     router.get('/version', (req, res) => {
