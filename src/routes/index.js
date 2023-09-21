@@ -212,13 +212,6 @@ function mainRoutes (router, middleware, controllers) {
     controllers.tickets.uploadAttachment
   )
 
-  router.post(
-    '/tickets/attachment',
-    middleware.redirectToLogin,
-    //middleware.csrfCheck,
-    controllers.tickets.attachment
-  )
-
 
   router.post('/tickets/uploadmdeimage', middleware.redirectToLogin, controllers.tickets.uploadImageMDE)
 
