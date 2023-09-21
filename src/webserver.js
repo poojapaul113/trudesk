@@ -63,6 +63,11 @@ let port = nconf.get('port') || 8118
     })
   }
 
+  module.exports.install = function () { 
+    const controllers = require('./controllers/index.js')
+    controllers.install.install();
+  }
+
   module.exports.installServer = function (callback) {
     const router = express.Router()
     const controllers = require('./controllers/index.js')
