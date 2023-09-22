@@ -19,14 +19,14 @@ const winston = require('../logger');
 const db = {};
 const mongoConnectionUri = {
   server: process.env.TD_MONGODB_SERVER || nconf.get('mongo:host'),
-  port: process.env.TD_MONGODB_PORT || nconf.get('mongo:port') || '27020',
+  port: process.env.TD_MONGODB_PORT || nconf.get('mongo:port') || '27017',
   username: process.env.TD_MONGODB_USERNAME || nconf.get('mongo:username'),
   password: process.env.TD_MONGODB_PASSWORD || nconf.get('mongo:password'),
   database: process.env.TD_MONGODB_DATABASE || nconf.get('mongo:database'),
   shard: process.env.TD_MONGODB_SHARD || nconf.get('mongo:shard'),
 };
 
-let CONNECTION_URI = 'mongodb://localhost:27020';
+let CONNECTION_URI = 'mongodb://mongo:27017';
 // if (!mongoConnectionUri.username) {
 //   CONNECTION_URI =
 //     'mongodb://' + mongoConnectionUri.server + ':' + mongoConnectionUri.port + '/' + mongoConnectionUri.database
@@ -66,7 +66,7 @@ let options = {
 };
 
 module.exports.init = async function (callback, connectionString, opts) {
-  if (connectionString) CONNECTION_URI = 'mongodb://localhost:27020';
+  if (connectionString) CONNECTION_URI = 'mongodb://mongo:27017';
   if (opts) options = opts;
   options.dbName = mongoConnectionUri.database;
 

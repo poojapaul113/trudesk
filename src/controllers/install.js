@@ -136,7 +136,7 @@ installController.install = function () {
     // please make this body
     mongo: {
       host: 'localhost',
-      port: '27020',
+      port: '27017',
       database: 'trudesk',
     },
     account: {
@@ -178,15 +178,12 @@ installController.install = function () {
 
   // const dbPassword = encodeURIComponent(password);
   // let conuri = 'mongodb://' + username + ':' + dbPassword + '@' + host + ':' + port + '/' + database
-  const conuri = 'mongodb://localhost:27020/';
+  const conuri = 'mongodb://mongo:27017/';
   // if (port === '---') conuri = 'mongodb+srv://' + username + ':' + dbPassword + '@' + host + '/' + database;
 
   async.waterfall(
     [
-      function (
-        
-      
-      ) {
+      function (next) {
         db.init(function (err) {
           return next(err);
         }, conuri);

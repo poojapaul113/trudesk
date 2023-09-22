@@ -22,7 +22,7 @@ services:
     image: mongo:5.0-focal
     restart: always
     ports:
-      - '27020:27017'
+      - '27017:27017'
     volumes:
       - mongo:/var/lib/mongo
       - mongo_data:/data/db:rw

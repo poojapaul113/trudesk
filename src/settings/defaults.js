@@ -593,7 +593,7 @@ function elasticSearchConfToDB(callback) {
   const nconf = require('nconf');
   const elasticsearch = {
     enable: nconf.get('elasticsearch:enable') || false,
-    host: nconf.get('elasticsearch:host') || '',
+    host: nconf.get('elasticsearch:host') || 'localhost',
     port: nconf.get('elasticsearch:port') || 9200,
   };
 
@@ -657,35 +657,67 @@ function elasticSearchConfToDB(callback) {
 function installationID(callback) {
   const Chance = require('chance');
   const chance = new Chance();
+
   SettingsSchema.getSettingByName('gen:installid', function (err, setting) {
-    if (err) return callback(err);
+    if (err) {
+      winston.error('Error getting setting: ' + err.message);
+      return callback(err);
+    }
+
     if (!setting) {
+      // Setting does not exist, create it
       SettingsSchema.create(
         {
           name: 'gen:installid',
           value: chance.guid(),
         },
-        callback
+        function (err, createdSetting) {
+          if (err) {
+            winston.error('Error creating setting: ' + err.message);
+            return callback(err);
+          }
+          winston.info('Setting created: ' + JSON.stringify(createdSetting));
+          callback(null, createdSetting);
+        }
       );
     } else {
-      return callback();
+      // Setting already exists, return without creating a new one
+      winston.info('Setting already exists: ' + JSON.stringify(setting));
+      callback(null, setting);
     }
   });
 }
 
 function maintenanceModeDefault(callback) {
   SettingsSchema.getSettingByName('maintenanceMode:enable', function (err, setting) {
-    if (err) return callback(err);
+    if (err) {
+      // Handle and log the error
+      console.error('Error getting maintenance mode setting:', err);
+      return callback(err);
+    }
+
     if (!setting) {
+      // Setting doesn't exist, create it
       SettingsSchema.create(
         {
           name: 'maintenanceMode:enable',
           value: false,
         },
-        callback
+        function (err, createdSetting) {
+          if (err) {
+            // Handle and log the error
+            console.error('Error creating maintenance mode setting:', err);
+            return callback(err);
+          }
+          // Log that the setting has been created
+          console.log('Maintenance mode setting created:', createdSetting);
+          // Callback with the created setting
+          return callback(null, createdSetting);
+        }
       );
     } else {
-      return callback();
+      // Setting already exists, return without creating a new one
+      return callback(null, setting);
     }
   });
 }
@@ -707,7 +739,7 @@ function addDefaultTeamAndAdmin(callback) {
     // please make this body
     mongo: {
       host: 'localhost',
-      port: '27020',
+      port: '27017',
       database: 'trudesk',
       password: '#TruDesk1$',
       username: 'trudesk',
@@ -727,11 +759,11 @@ function addDefaultTeamAndAdmin(callback) {
   };
 
   // Mongo
-  // const host = data['mongo[host]'];
-  // const port = data['mongo[port]'];
-  // const database = data['mongo[database]'];
-  // const username = data['mongo[username]'];
-  // const password = data['mongo[password]'];
+  const host = data['mongo[host]'];
+  const port = data['mongo[port]'];
+  const database = data['mongo[database]'];
+  const username = data['mongo[username]'];
+  const password = data['mongo[password]'];
 
   // ElasticSearch
   let eEnabled = data['elastic[enable]'];
@@ -751,17 +783,19 @@ function addDefaultTeamAndAdmin(callback) {
 
   // const dbPassword = encodeURIComponent(password);
   // let conuri = 'mongodb://' + username + ':' + dbPassword + '@' + host + ':' + port + '/' + database
-  const conuri = 'mongodb://localhost:27020/';
+  const conuri = 'mongodb://mongo:27017/';
   // if (port === '---') conuri = 'mongodb+srv://' + username + ':' + dbPassword + '@' + host + '/' + database;
 
   async.waterfall(
     [
       function (next) {
+        winston.info('function 1');
         db.init(function (err) {
           return next(err);
         }, conuri);
       },
       function (next) {
+        winston.info('function 2');
         const s = new SettingsSchema({
           name: 'gen:version',
           value: require('../../package.json').version,
@@ -772,6 +806,7 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 3');
         // if (!eEnabled) return next()
         async.parallel(
           [
@@ -811,6 +846,7 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
+        winston.info('function 4');
         const Counter = new Counters({
           _id: 'tickets',
           next: 1001,
@@ -821,6 +857,7 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 5');
         const Counter = new Counters({
           _id: 'reports',
           next: 1001,
@@ -831,6 +868,7 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 6');
         TicketStatusSchema.create(
           [
             {
@@ -878,6 +916,7 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
+        winston.info('function 7');
         Counters.setCounter('status', 4, function (err) {
           if (err) return next(err);
 
@@ -885,6 +924,7 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 8');
         const type = new TicketTypeSchema({
           name: 'Issue',
         });
@@ -894,8 +934,9 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 9');
         const type = new TicketTypeSchema({
-          name: 'Task',
+          name: 'Grievance',
         });
 
         type.save(function (err) {
@@ -903,12 +944,73 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
+        winston.info('function 10');
         GroupSchema.create({ name: 'Default Group' }, function (err) {
           if (err) return next(err);
           return next();
         });
       },
       function (next) {
+        function updateOrCreateRole(name, description, grants, callback) {
+          roleSchema.findOneAndUpdate(
+            { name: name },
+            {
+              description: description,
+              grants: grants,
+            },
+            { new: true, upsert: true },
+            function (err, role) {
+              if (err) {
+                winston.error('Error updating/creating ' + name + ' role: ' + err.message);
+                return callback(err);
+              }
+              // winston.info(name + ' role updated or created: ' + JSON.stringify(role));
+              callback(null, role);
+            }
+          );
+        }
+        winston.info('function 11');
+        const roleResults = {};
+
+        async.parallel(
+          [
+            function (done) {
+              updateOrCreateRole('Admin', 'Default role for admins', roleDefaults.adminGrants, function (err, role) {
+                if (err) return done(err);
+                roleResults.adminRole = role;
+                done();
+              });
+            },
+            function (done) {
+              updateOrCreateRole(
+                'Support',
+                'Default role for agents',
+                roleDefaults.supportGrants,
+                function (err, role) {
+                  if (err) return done(err);
+                  roleResults.supportRole = role;
+                  done();
+                }
+              );
+            },
+            function (done) {
+              updateOrCreateRole('User', 'Default role for users', roleDefaults.userGrants, function (err, role) {
+                if (err) return done(err);
+                roleResults.userRole = role;
+                done();
+              });
+            },
+          ],
+          function (err) {
+            if (err) {
+              winston.error('Error in async.parallel: ' + err.message);
+            }
+            return next(err, roleResults);
+          }
+        );
+      },
+      function (role, next) {
+        winston.info('function 12');
         const TeamSchema = require('../models/team');
         TeamSchema.create(
           {
@@ -916,13 +1018,18 @@ function addDefaultTeamAndAdmin(callback) {
             members: [],
           },
           function (err, team) {
-            return next(err, team);
+            if (err) {
+              winston.info(err);
+              winston.info(JSON.stringify(team));
+            }
+            return next(err, team, role);
           }
         );
       },
-      async function (defaultTeam, next) {
-        const Chance = require('Chance');
-        const RoleSchema = require('../models/role');
+      function (defaultTeam, role, next) {
+        winston.info('function 13');
+        // const Chance = require('Chance');
+        // const RoleSchema = require('../models/role');
         const UserSchema = require('../models/user');
         const user = {
           username: 'admin',
@@ -931,8 +1038,8 @@ function addDefaultTeamAndAdmin(callback) {
           email: 'admin@gmail.com',
           fullname: 'admin',
         };
-        const role = await RoleSchema.getRoleByName('Admin');
-        winston.warn(JSON.stringify(role));
+        // const role = RoleSchema.getRoleByName('Admin');
+        winston.info(JSON.stringify(role));
         UserSchema.getUserByUsername(user.username, function (err, admin) {
           if (err) {
             winston.error('Database Error: ' + err.message);
@@ -953,251 +1060,125 @@ function addDefaultTeamAndAdmin(callback) {
             password: user.password,
             fullname: user.fullname,
             email: user.email,
-            role: role._id,
+            role: role.adminRole._id,
             title: 'Administrator',
             accessToken: chance.hash(),
           });
 
-          adminUser.save();
+          // adminUser.save();
 
-          // adminUser.save(function (err, savedUser) {
-          //   if (err) {
-          //     winston.info('error>>>>>>>>>>>>1');
-          //     winston.error('Database Error: ' + err.message);
-          //     return next('Database Error: ' + err.message);
-          //   }
+          adminUser.save(function (err, savedUser) {
+            if (err) {
+              winston.info('error>>>>>>>>>>>>1');
+              winston.error('Database Error: ' + err.message);
+              return next('Database Error: ' + err.message);
+            }
 
-          //   defaultTeam.addMember(savedUser._id, function (err, success) {
-          //     if (err) {
-          //       winston.info('error>>>>>>>>>>>>2');
-          //       winston.error('Database Error: ' + err.message);
-          //       return next('Database Error: ' + err.message);
-          //     }
+            defaultTeam.addMember(savedUser._id, function (err, success) {
+              if (err) {
+                winston.info('error>>>>>>>>>>>>2');
+                winston.error('Database Error: ' + err.message);
+                return next('Database Error: ' + err.message);
+              }
 
-          //     if (!success) {
-          //       winston.info('error>>>>>>>>>>>>3');
-          //       return next('Unable to add user to Administrator group!');
-          //     }
+              if (!success) {
+                winston.info('error>>>>>>>>>>>>3');
+                return next('Unable to add user to Administrator group!');
+              }
 
-          //     defaultTeam.save(function (err) {
-          //       winston.info('error>>>>>>>>>>>>4');
-          //       if (err) {
-          //         winston.error('Database Error: ' + err.message);
-          //         return next('Database Error: ' + err.message);
-          //       }
+              // Save the team only after adding the member
+              defaultTeam.save(function (err) {
+                if (err) {
+                  winston.info('error>>>>>>>>>>>>4');
+                  winston.error('Database Error: ' + err.message);
+                }
 
-          //       return next(null);
-          //     });
-          //   });
-          // });
+                return next(err, defaultTeam);
+              });
+            });
+          });
         });
       },
-      // function (next) {
-      //   const defaults = require('../settings/defaults');
-      //   const roleResults = {};
-      //   async.series([
-      //     function (done) {
-      //       roleSchema.create(
-      //         {
-      //           name: 'Admin',
-      //           description: 'Default role for admins',
-      //           grants: defaults.roleDefaults.adminGrants,
-      //         },
-      //         function (err, role) {
-      //           if (err) return done(err);
-      //           roleResults.adminRole = role;
-      //           return done();
-      //         }
-      //       );
-      //     },
-      //     function (done) {
-      //       roleSchema.create(
-      //         {
-      //           name: 'Support',
-      //           description: 'Default role for agents',
-      //           grants: defaults.roleDefaults.supportGrants,
-      //         },
-      //         function (err, role) {
-      //           if (err) return done(err);
-      //           roleResults.supportRole = role;
-      //           return done();
-      //         }
-      //       );
-      //     },
-      //     function (done) {
-      //       roleSchema.create(
-      //         {
-      //           name: 'User',
-      //           description: 'Default role for users',
-      //           grants: defaults.roleDefaults.userGrants,
-      //         },
-      //         function (err, role) {
-      //           if (err) return done(err);
-      //           roleResults.userRole = role;
-      //           return done();
-      //         }
-      //       );
-      //     },
-      //     function (err) {
-      //       return next(err, roleResults);
-      //     },
-      //   ]);
-      // },
-      // function (roleResults, next) {
-      //   const TeamSchema = require('../models/team');
-      //   TeamSchema.create(
-      //     {
-      //       name: 'Support (Default)',
-      //       members: [],
-      //     },
-      //     function (err, team) {
-      //       return next(err, team, roleResults);
-      //     }
-      //   );
-      // },
-      // function (defaultTeam, roleResults, next) {
-      //   UserSchema.getUserByUsername(user.username, function (err, admin) {
-      //     if (err) {
-      //       winston.error('Database Error: ' + err.message);
-      //       return next('Database Error: ' + err.message);
-      //     }
+      function (defaultTeam, next) {
+        winston.info('function 14');
+        const DepartmentSchema = require('../models/department');
 
-      //     if (!_.isNull(admin) && !_.isUndefined(admin) && !_.isEmpty(admin)) {
-      //       return next('Username: ' + user.username + ' already exists.');
-      //     }
+        if (!defaultTeam || !defaultTeam._id) {
+          const errorMessage = 'Invalid defaultTeam object or missing _id property';
+          winston.error(errorMessage);
+          return next(errorMessage);
+        }
 
-      //     if (user.password !== user.passconfirm) {
-      //       return next('Passwords do not match!');
-      //     }
+        DepartmentSchema.create(
+          {
+            name: 'Support - All Groups (Default)',
+            teams: [defaultTeam._id],
+            allGroups: true,
+            groups: [],
+          },
+          function (err) {
+            if (err) {
+              winston.error('Error creating Department: ' + err.message);
+              return next(err);
+            }
+            return next();
+          }
+        );
+      },
+      function (next) {
+        winston.info('function 15');
+        // if (!process.env.TRUDESK_DOCKER) return next();
+        const S = require('../models/setting');
+        const installed = new S({
+          name: 'installed',
+          value: true,
+        });
 
-      //     const chance = new Chance();
-      //     const adminUser = new UserSchema({
-      //       username: user.username,
-      //       password: user.password,
-      //       fullname: user.fullname,
-      //       email: user.email,
-      //       role: roleResults.adminRole._id,
-      //       title: 'Administrator',
-      //       accessToken: chance.hash(),
-      //     });
+        installed.save(function (err) {
+          if (err) {
+            winston.error('DB Error: ' + err.message);
+            return next('DB Error: ' + err.message);
+          }
 
-      //     adminUser.save(function (err, savedUser) {
-      //       if (err) {
-      //         winston.error('Database Error: ' + err.message);
-      //         return next('Database Error: ' + err.message);
-      //       }
+          return next();
+        });
+      },
+      function (next) {
+        winston.info('function 16');
+        // if (process.env.TRUDESK_DOCKER) return next();
+        // Write Configfile
+        const fs = require('fs');
+        const configFile = path.join(__dirname, '../../config.yml');
+        const chance = new Chance();
+        const YAML = require('yaml');
 
-      //       defaultTeam.addMember(savedUser._id, function (err, success) {
-      //         if (err) {
-      //           winston.error('Database Error: ' + err.message);
-      //           return next('Database Error: ' + err.message);
-      //         }
+        const conf = {
+          mongo: {
+            host: host,
+            port: port,
+            username: username,
+            password: password,
+            database: database,
+            shard: port === '---',
+          },
+          tokens: {
+            secret: chance.hash() + chance.md5(),
+            expires: 900, // 15min
+          },
+        };
 
-      //         if (!success) {
-      //           return next('Unable to add user to Administrator group!');
-      //         }
+        fs.writeFile(configFile, YAML.stringify(conf), function (err) {
+          if (err) {
+            winston.error('FS Error: ' + err.message);
+            return next('FS Error: ' + err.message);
+          }
 
-      //         defaultTeam.save(function (err) {
-      //           if (err) {
-      //             winston.error('Database Error: ' + err.message);
-      //             return next('Database Error: ' + err.message);
-      //           }
-
-      //           return next(null, defaultTeam);
-      //         });
-      //       });
-      //     });
-      //   });
-      // },
-      // function (defaultTeam, next) {
-      //   winston.debug('asdasdasdasd');
-      //   const DepartmentSchema = require('../models/department');
-      //   DepartmentSchema.create(
-      //     {
-      //       name: 'Support - All Groups (Default)',
-      //       teams: [defaultTeam._id],
-      //       allGroups: true,
-      //       groups: [],
-      //     },
-      //     function (err) {
-      //       return next(err);
-      //     }
-      //   );
-      // },
-      // function (next) {
-      //   winston.debug('asdasdasdasd');
-      //   if (!process.env.TRUDESK_DOCKER) return next();
-      //   const S = require('../models/setting');
-      //   const installed = new S({
-      //     name: 'installed',
-      //     value: true,
-      //   });
-
-      //   installed.save(function (err) {
-      //     if (err) {
-      //       winston.error('DB Error: ' + err.message);
-      //       return next('DB Error: ' + err.message);
-      //     }
-
-      //     return next();
-      //   });
-      // },
-      // function (next) {
-      //   if (process.env.TRUDESK_DOCKER) return next();
-      //   // Write Configfile
-      //   const fs = require('fs');
-      //   const configFile = path.join(__dirname, '../../config.yml');
-      //   const chance = new Chance();
-      //   const YAML = require('yaml');
-
-      //   const conf = {
-      //     mongo: {
-      //       host: host,
-      //       port: port,
-      //       username: username,
-      //       password: password,
-      //       database: database,
-      //       shard: port === '---',
-      //     },
-      //     tokens: {
-      //       secret: chance.hash() + chance.md5(),
-      //       expires: 900, // 15min
-      //     },
-      //   };
-
-      //   fs.writeFile(configFile, YAML.stringify(conf), function (err) {
-      //     if (err) {
-      //       winston.error('FS Error: ' + err.message);
-      //       return next('FS Error: ' + err.message);
-      //     }
-
-      //     return next(null);
-      //   });
-      // },
+          return next(null);
+        });
+      },
     ],
     callback
-
-    // function (err) {
-    //   if (err) {
-    //     winston.error('install Error: ', err);
-    //     callback(err);
-    //   }
-
-    //   winston.info('Install complete');
-
-    //   // if (err) {
-    //   //   return res.status(400).json({ success: false, error: err });
-    //   // }
-
-    //   // res.json({ success: true });
-    // }
   );
-  // async.waterfall(
-  //   [
-
-  //   ],
-  //   callback
-  // );
 }
 settingsDefaults.init = function (callback) {
   winston.debug('Checking Default Settings...');
@@ -1251,7 +1232,6 @@ settingsDefaults.init = function (callback) {
         winston.debug('roles11');
         return mailTemplates(done);
       },
-
       function (done) {
         winston.debug('roles13');
         return elasticSearchConfToDB(done);
@@ -1266,7 +1246,10 @@ settingsDefaults.init = function (callback) {
       },
     ],
     function (err) {
-      if (err) winston.warn(err);
+      if (err) {
+        winston.info('erororororoororororo>>>>>>>>>>>>>>>>>>');
+        winston.warn(err);
+      }
       if (_.isFunction(callback)) return callback();
     }
   );
