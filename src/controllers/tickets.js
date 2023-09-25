@@ -741,6 +741,7 @@ ticketsController.uploadImageMDE = function (req, res) {
 }
 
 ticketsController.uploadAttachment = function (req, res) {
+  console.log('upload attachment ===========')
   const Busboy = require('busboy')
   const busboy = Busboy({
     headers: req.headers,
@@ -753,6 +754,8 @@ ticketsController.uploadAttachment = function (req, res) {
   const object = {
     ownerId: req.user._id
   }
+
+  console.log('object---------', object)
   let error
 
   const events = []
@@ -790,6 +793,9 @@ ticketsController.uploadAttachment = function (req, res) {
 
     const savePath = path.join(__dirname, '../../public/uploads/tickets', object.ticketId)
     let sanitizedFilename = filename.replace(/[^a-z0-9.]/gi, '_').toLowerCase()
+
+
+    console.log('savePath---------', savePath)
 
     const ext = path.extname(sanitizedFilename)
     const allowedExts = [
@@ -897,6 +903,7 @@ ticketsController.uploadAttachment = function (req, res) {
           path: '/uploads/tickets/' + object.ticketId + '/attachment_' + object.filename,
           type: object.mimetype
         }
+
         ticket.attachments.push(attachment)
 
         const historyItem = {
@@ -928,6 +935,51 @@ ticketsController.uploadAttachment = function (req, res) {
 }
 
 
+ticketsController.attachment = function (req, res) {
+  console.log('attachment ===========')
+
+  ticketSchema.getTicketById(req.body.ticketId, function (err, ticket) {
+    if (err) {
+      winston.warn(err)
+      return res.status(500).send(err.message)
+    }
+
+    const image = req.body.attachment
+    const imageName = image.split("/").pop()
+    const url = process.env.REACT_APP_BASE_URL
+    const newurl = url.slice(0,url.length-1)
+    const imagepath = `${newurl}:8989/${imageName}`
+    const type = `image/${imageName.split(".").pop()}`
+    const attachment = {
+      owner: req.body.ownerId,
+      name: imageName,
+      path: imagepath,
+      type: type
+    }
+  
+    ticket.attachments.push(attachment)
+
+    const historyItem = {
+      action: 'ticket:added:attachment',
+      description: 'Attachment ' + imageName + ' was added.',
+      owner: req.body.ownerId
+    }
+    ticket.history.push(historyItem)
+
+    ticket.updated = Date.now()
+    ticket.save(function (err, t) {
+      if (err) {
+        winston.warn(err)
+        return res.status(500).send(err.message)
+      }
+
+      const returnData = {
+        ticket: t
+      }
+      return res.json(returnData)
+    })
+  })
+}
 
 
 function handleError (res, err) {

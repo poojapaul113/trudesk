@@ -212,6 +212,11 @@ function mainRoutes (router, middleware, controllers) {
     controllers.tickets.uploadAttachment
   )
 
+  router.post(
+    '/tickets/attachment',
+    controllers.tickets.attachment
+  )
+
 
   router.post('/tickets/uploadmdeimage', middleware.redirectToLogin, controllers.tickets.uploadImageMDE)
 
