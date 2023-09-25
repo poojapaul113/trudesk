@@ -710,7 +710,7 @@ function maintenanceModeDefault(callback) {
             return callback(err);
           }
           // Log that the setting has been created
-          console.log('Maintenance mode setting created:', createdSetting);
+
           // Callback with the created setting
           return callback(null, createdSetting);
         }
@@ -1039,7 +1039,6 @@ function addDefaultTeamAndAdmin(callback) {
           fullname: 'admin',
         };
         // const role = RoleSchema.getRoleByName('Admin');
-        winston.info(JSON.stringify(role));
         UserSchema.getUserByUsername(user.username, function (err, admin) {
           if (err) {
             winston.error('Database Error: ' + err.message);
@@ -1069,27 +1068,23 @@ function addDefaultTeamAndAdmin(callback) {
 
           adminUser.save(function (err, savedUser) {
             if (err) {
-              winston.info('error>>>>>>>>>>>>1');
               winston.error('Database Error: ' + err.message);
               return next('Database Error: ' + err.message);
             }
 
             defaultTeam.addMember(savedUser._id, function (err, success) {
               if (err) {
-                winston.info('error>>>>>>>>>>>>2');
                 winston.error('Database Error: ' + err.message);
                 return next('Database Error: ' + err.message);
               }
 
               if (!success) {
-                winston.info('error>>>>>>>>>>>>3');
                 return next('Unable to add user to Administrator group!');
               }
 
               // Save the team only after adding the member
               defaultTeam.save(function (err) {
                 if (err) {
-                  winston.info('error>>>>>>>>>>>>4');
                   winston.error('Database Error: ' + err.message);
                 }
 
@@ -1185,69 +1180,53 @@ settingsDefaults.init = function (callback) {
   async.series(
     [
       function (done) {
-        winston.debug('roles1');
         return createDirectories(done);
       },
       function (done) {
-        winston.debug('roles2');
         return downloadWin32MongoDBTools(done);
       },
       function (done) {
-        winston.debug('roles3');
         return rolesDefault(done);
       },
       function (done) {
-        winston.debug('roles4');
         return defaultUserRole(done);
       },
       function (done) {
-        winston.debug('roles5');
         return timezoneDefault(done);
       },
       function (done) {
-        winston.debug('roles12');
         return addDefaultTeamAndAdmin(done);
       },
       function (done) {
-        winston.debug('roles6');
         return ticketTypeSettingDefault(done);
       },
       function (done) {
-        winston.debug('roles7');
         return ticketPriorityDefaults(done);
       },
       function (done) {
-        winston.debug('roles8');
         return addedDefaultPrioritiesToTicketTypes(done);
       },
       function (done) {
-        winston.debug('roles9');
         return checkPriorities(done);
       },
       function (done) {
-        winston.debug('roles10');
         return normalizeTags(done);
       },
       function (done) {
-        winston.debug('roles11');
         return mailTemplates(done);
       },
       function (done) {
-        winston.debug('roles13');
         return elasticSearchConfToDB(done);
       },
       function (done) {
-        winston.debug('roles14');
         return maintenanceModeDefault(done);
       },
       function (done) {
-        winston.debug('roles15');
         return installationID(done);
       },
     ],
     function (err) {
       if (err) {
-        winston.info('erororororoororororo>>>>>>>>>>>>>>>>>>');
         winston.warn(err);
       }
       if (_.isFunction(callback)) return callback();
