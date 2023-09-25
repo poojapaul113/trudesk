@@ -723,6 +723,28 @@ apiTickets.single = function (req, res) {
   })
 }
 
+apiTickets.singleTicketByTransaction = function (req, res) {
+  var transaction_id = req.params.transaction_id
+  if (_.isUndefined(transaction_id)) return res.status(200).json({ success: false, error: 'Invalid Ticket' })
+
+  var ticketModel = require('../../../models/ticket')
+
+  ticketModel.getTicketByTransactionId(transaction_id, function (err, ticket) {
+    if (err) return res.send(err)
+
+    if (_.isUndefined(ticket) || _.isNull(ticket)) {
+      return res.status(200).json({ success: false, error: 'Invalid Ticket' })
+    }
+
+    ticket = _.clone(ticket._doc)
+    if (!permissions.canThis(req.user.role, 'tickets:notes')) {
+      delete ticket.notes
+    }
+
+    return res.json({ success: true, ticket: ticket })
+  })
+}
+
 /**
  * @api {put} /api/v1/tickets/:id Update Ticket
  * @apiName updateTicket
