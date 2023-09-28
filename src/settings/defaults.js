@@ -745,11 +745,11 @@ function addDefaultTeamAndAdmin(callback) {
       username: 'trudesk',
     },
     account: {
-      username: 'admin',
-      password: 'Admin@123',
-      passconfirm: 'Admin@123',
-      email: 'admin@gmail.com',
-      fullname: 'admin',
+      username: process.env.TRUDESK_USERNAME,
+      password: process.env.TRUDESK_PASSWORD,
+      passconfirm: process.env.TRUDESK_PASSWORD,
+      email: process.env.TRUDESK_EMAIL,
+      fullname: process.env.TRUDESK_USERNAME,
     },
     elastic: {
       enable: false,
@@ -789,13 +789,11 @@ function addDefaultTeamAndAdmin(callback) {
   async.waterfall(
     [
       function (next) {
-        winston.info('function 1');
         db.init(function (err) {
           return next(err);
         }, conuri);
       },
       function (next) {
-        winston.info('function 2');
         const s = new SettingsSchema({
           name: 'gen:version',
           value: require('../../package.json').version,
@@ -806,7 +804,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 3');
         // if (!eEnabled) return next()
         async.parallel(
           [
@@ -846,7 +843,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 4');
         const Counter = new Counters({
           _id: 'tickets',
           next: 1001,
@@ -857,7 +853,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 5');
         const Counter = new Counters({
           _id: 'reports',
           next: 1001,
@@ -868,7 +863,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 6');
         TicketStatusSchema.create(
           [
             {
@@ -916,7 +910,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 7');
         Counters.setCounter('status', 4, function (err) {
           if (err) return next(err);
 
@@ -924,7 +917,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 8');
         const type = new TicketTypeSchema({
           name: 'Issue',
         });
@@ -934,7 +926,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 9');
         const type = new TicketTypeSchema({
           name: 'Grievance',
         });
@@ -944,7 +935,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 10');
         GroupSchema.create({ name: 'Default Group' }, function (err) {
           if (err) return next(err);
           return next();
@@ -969,7 +959,6 @@ function addDefaultTeamAndAdmin(callback) {
             }
           );
         }
-        winston.info('function 11');
         const roleResults = {};
 
         async.parallel(
@@ -1010,7 +999,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (role, next) {
-        winston.info('function 12');
         const TeamSchema = require('../models/team');
         TeamSchema.create(
           {
@@ -1027,16 +1015,15 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (defaultTeam, role, next) {
-        winston.info('function 13');
         // const Chance = require('Chance');
         // const RoleSchema = require('../models/role');
         const UserSchema = require('../models/user');
         const user = {
-          username: 'admin',
-          password: 'Admin@123',
-          passconfirm: 'Admin@123',
-          email: 'admin@gmail.com',
-          fullname: 'admin',
+          username: process.env.TRUDESK_USERNAME,
+          password: process.env.TRUDESK_PASSWORD,
+          passconfirm: process.env.TRUDESK_PASSWORD,
+          email: process.env.TRUDESK_EMAIL,
+          fullname: process.env.TRUDESK_USERNAME,
         };
         // const role = RoleSchema.getRoleByName('Admin');
         UserSchema.getUserByUsername(user.username, function (err, admin) {
@@ -1095,7 +1082,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (defaultTeam, next) {
-        winston.info('function 14');
         const DepartmentSchema = require('../models/department');
 
         if (!defaultTeam || !defaultTeam._id) {
@@ -1121,7 +1107,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 15');
         // if (!process.env.TRUDESK_DOCKER) return next();
         const S = require('../models/setting');
         const installed = new S({
@@ -1139,7 +1124,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 16');
         // if (process.env.TRUDESK_DOCKER) return next();
         // Write Configfile
         const fs = require('fs');
