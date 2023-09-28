@@ -710,7 +710,7 @@ function maintenanceModeDefault(callback) {
             return callback(err);
           }
           // Log that the setting has been created
-          console.log('Maintenance mode setting created:', createdSetting);
+
           // Callback with the created setting
           return callback(null, createdSetting);
         }
@@ -745,11 +745,11 @@ function addDefaultTeamAndAdmin(callback) {
       username: 'trudesk',
     },
     account: {
-      username: 'admin',
-      password: 'Admin@123',
-      passconfirm: 'Admin@123',
-      email: 'admin@gmail.com',
-      fullname: 'admin',
+      username: process.env.TRUDESK_USERNAME,
+      password: process.env.TRUDESK_PASSWORD,
+      passconfirm: process.env.TRUDESK_PASSWORD,
+      email: process.env.TRUDESK_EMAIL,
+      fullname: process.env.TRUDESK_USERNAME,
     },
     elastic: {
       enable: false,
@@ -789,13 +789,11 @@ function addDefaultTeamAndAdmin(callback) {
   async.waterfall(
     [
       function (next) {
-        winston.info('function 1');
         db.init(function (err) {
           return next(err);
         }, conuri);
       },
       function (next) {
-        winston.info('function 2');
         const s = new SettingsSchema({
           name: 'gen:version',
           value: require('../../package.json').version,
@@ -806,7 +804,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 3');
         // if (!eEnabled) return next()
         async.parallel(
           [
@@ -846,7 +843,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 4');
         const Counter = new Counters({
           _id: 'tickets',
           next: 1001,
@@ -857,7 +853,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 5');
         const Counter = new Counters({
           _id: 'reports',
           next: 1001,
@@ -868,7 +863,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 6');
         TicketStatusSchema.create(
           [
             {
@@ -916,7 +910,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 7');
         Counters.setCounter('status', 4, function (err) {
           if (err) return next(err);
 
@@ -924,7 +917,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 8');
         const type = new TicketTypeSchema({
           name: 'Issue',
         });
@@ -934,7 +926,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 9');
         const type = new TicketTypeSchema({
           name: 'Grievance',
         });
@@ -944,7 +935,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 10');
         GroupSchema.create({ name: 'Default Group' }, function (err) {
           if (err) return next(err);
           return next();
@@ -969,7 +959,6 @@ function addDefaultTeamAndAdmin(callback) {
             }
           );
         }
-        winston.info('function 11');
         const roleResults = {};
 
         async.parallel(
@@ -1010,7 +999,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (role, next) {
-        winston.info('function 12');
         const TeamSchema = require('../models/team');
         TeamSchema.create(
           {
@@ -1027,19 +1015,17 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (defaultTeam, role, next) {
-        winston.info('function 13');
         // const Chance = require('Chance');
         // const RoleSchema = require('../models/role');
         const UserSchema = require('../models/user');
         const user = {
-          username: 'admin',
-          password: 'Admin@123',
-          passconfirm: 'Admin@123',
-          email: 'admin@gmail.com',
-          fullname: 'admin',
+          username: process.env.TRUDESK_USERNAME,
+          password: process.env.TRUDESK_PASSWORD,
+          passconfirm: process.env.TRUDESK_PASSWORD,
+          email: process.env.TRUDESK_EMAIL,
+          fullname: process.env.TRUDESK_USERNAME,
         };
         // const role = RoleSchema.getRoleByName('Admin');
-        winston.info(JSON.stringify(role));
         UserSchema.getUserByUsername(user.username, function (err, admin) {
           if (err) {
             winston.error('Database Error: ' + err.message);
@@ -1069,27 +1055,23 @@ function addDefaultTeamAndAdmin(callback) {
 
           adminUser.save(function (err, savedUser) {
             if (err) {
-              winston.info('error>>>>>>>>>>>>1');
               winston.error('Database Error: ' + err.message);
               return next('Database Error: ' + err.message);
             }
 
             defaultTeam.addMember(savedUser._id, function (err, success) {
               if (err) {
-                winston.info('error>>>>>>>>>>>>2');
                 winston.error('Database Error: ' + err.message);
                 return next('Database Error: ' + err.message);
               }
 
               if (!success) {
-                winston.info('error>>>>>>>>>>>>3');
                 return next('Unable to add user to Administrator group!');
               }
 
               // Save the team only after adding the member
               defaultTeam.save(function (err) {
                 if (err) {
-                  winston.info('error>>>>>>>>>>>>4');
                   winston.error('Database Error: ' + err.message);
                 }
 
@@ -1100,7 +1082,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (defaultTeam, next) {
-        winston.info('function 14');
         const DepartmentSchema = require('../models/department');
 
         if (!defaultTeam || !defaultTeam._id) {
@@ -1126,7 +1107,6 @@ function addDefaultTeamAndAdmin(callback) {
         );
       },
       function (next) {
-        winston.info('function 15');
         // if (!process.env.TRUDESK_DOCKER) return next();
         const S = require('../models/setting');
         const installed = new S({
@@ -1144,7 +1124,6 @@ function addDefaultTeamAndAdmin(callback) {
         });
       },
       function (next) {
-        winston.info('function 16');
         // if (process.env.TRUDESK_DOCKER) return next();
         // Write Configfile
         const fs = require('fs');
@@ -1185,69 +1164,53 @@ settingsDefaults.init = function (callback) {
   async.series(
     [
       function (done) {
-        winston.debug('roles1');
         return createDirectories(done);
       },
       function (done) {
-        winston.debug('roles2');
         return downloadWin32MongoDBTools(done);
       },
       function (done) {
-        winston.debug('roles3');
         return rolesDefault(done);
       },
       function (done) {
-        winston.debug('roles4');
         return defaultUserRole(done);
       },
       function (done) {
-        winston.debug('roles5');
         return timezoneDefault(done);
       },
       function (done) {
-        winston.debug('roles12');
         return addDefaultTeamAndAdmin(done);
       },
       function (done) {
-        winston.debug('roles6');
         return ticketTypeSettingDefault(done);
       },
       function (done) {
-        winston.debug('roles7');
         return ticketPriorityDefaults(done);
       },
       function (done) {
-        winston.debug('roles8');
         return addedDefaultPrioritiesToTicketTypes(done);
       },
       function (done) {
-        winston.debug('roles9');
         return checkPriorities(done);
       },
       function (done) {
-        winston.debug('roles10');
         return normalizeTags(done);
       },
       function (done) {
-        winston.debug('roles11');
         return mailTemplates(done);
       },
       function (done) {
-        winston.debug('roles13');
         return elasticSearchConfToDB(done);
       },
       function (done) {
-        winston.debug('roles14');
         return maintenanceModeDefault(done);
       },
       function (done) {
-        winston.debug('roles15');
         return installationID(done);
       },
     ],
     function (err) {
       if (err) {
-        winston.info('erororororoororororo>>>>>>>>>>>>>>>>>>');
         winston.warn(err);
       }
       if (_.isFunction(callback)) return callback();
