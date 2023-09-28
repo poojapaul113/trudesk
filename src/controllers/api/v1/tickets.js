@@ -1190,6 +1190,28 @@ apiTickets.updateType = function (req, res) {
   })
 }
 
+
+
+apiTickets.updateTicketType = function (req, res) {
+  const ticketId = req.params.ticketid
+
+  var data = req.body
+  var ticketSchema = require('../../../models/ticket')
+
+  ticketSchema.getTicketById(ticketId, function (err, ticket) {
+    if (err) return res.status(400).json({ success: false, error: err.message })
+
+    ticket.type = data.type
+
+    ticket.save(function (err, t) {
+      if (err) return res.status(400).json({ success: false, error: err.message })
+
+      return res.json({ success: true, type: t })
+    })
+  })
+}
+
+
 apiTickets.typeAddPriority = function (req, res) {
   var id = req.params.id
 
