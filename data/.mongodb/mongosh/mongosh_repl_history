@@ -1,0 +1,9 @@
+db.teams.find()
+db.groups.find();
+db.accounts.find();
+show collections
+use trudesk
+show collections;
+show collection;
+show colletions;
+show colletions

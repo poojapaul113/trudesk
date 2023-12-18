@@ -45,18 +45,25 @@ teamSchema.pre('save', function (next) {
   return next()
 })
 
-teamSchema.methods.addMember = async function (memberId, callback) {
+groupSchema.methods.addMember = async function (memberId, callback) {
+  const self = this
   return new Promise((resolve, reject) => {
     ;(async () => {
       if (_.isUndefined(memberId)) {
-        if (typeof callback === 'function') return callback({ message: 'Invalid MemberId - TeamSchema.AddMember()' })
-        return reject(new Error('Invalid MemberId - TeamSchema.AddMember()'))
+        if (typeof callback === 'function') return callback({ message: 'Invalid MemberId - $Team.AddMember()' })
+
+        return reject(new Error('Invalid MemberId - $Team.AddMember()'))
       }
 
-      if (this.members === null) this.members = []
+      if (self.members === null) self.members = []
+      if (isMember(self.members, memberId)) {
+        if (typeof callback === 'function') return callback(null, false)
 
-      this.members.push(memberId)
-      this.members = _.uniq(this.members)
+        return resolve(false)
+      }
+
+      self.members.push(memberId)
+      self.members = _.uniq(self.members)
 
       if (typeof callback === 'function') return callback(null, true)
 

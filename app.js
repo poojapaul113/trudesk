@@ -144,6 +144,7 @@ function launchServer(db) {
       winston.error(err);
       return;
     }
+    
 
     async.series(
       [

@@ -737,6 +737,7 @@ function addDefaultTeamAndAdmin(callback) {
   // const data = req.body
   const data = {
     // please make this body
+    
     mongo: {
       host: 'localhost',
       port: '27017',
