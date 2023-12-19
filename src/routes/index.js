@@ -90,13 +90,13 @@ function mainRoutes (router, middleware, controllers) {
   )
 
   // Tickets
-  router.get(
-    '/tickets',
-    middleware.redirectToLogin,
-    middleware.loadCommonData,
-    controllers.tickets.getActive,
-    controllers.tickets.processor
-  )
+  // router.get(
+  //   '/tickets',
+  //   middleware.redirectToLogin,
+  //   middleware.loadCommonData,
+  //   controllers.tickets.getActive,
+  //   controllers.tickets.processor
+  // )
   router.get(
     '/tickets/filter',
     middleware.redirectToLogin,
@@ -104,6 +104,48 @@ function mainRoutes (router, middleware, controllers) {
     controllers.tickets.filter,
     controllers.tickets.processor
   )
+
+  router.get('/tickets', async (req, res) => {
+    try {
+      var ticketModel = require('../../src/models/ticket');
+      var ticketStatusSchema = require('../../src/models/ticketStatus');
+      var UserSchema = require('../../src/models/user');
+
+      const auth_header = req.headers.accesstoken;
+      const user = await UserSchema.findOne({ accessToken: auth_header });
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'UnAuthorised',
+        });
+      }
+
+      const limit = parseInt(req.query.limit) || 10;
+      const page = parseInt(req.query.page) || 0;
+
+      const statuses = await ticketStatusSchema.find({ isResolved: false });
+      const tickets = await ticketModel
+        .find({
+          owner: user._id,
+        })
+        .limit(limit)
+        .skip(page);
+
+      return res.status(200).json({
+        success: true,
+        user: user,
+        tickets,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  });
+
+
   router.get(
     '/tickets/active',
     middleware.redirectToLogin,

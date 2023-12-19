@@ -223,6 +223,7 @@ angular
           }
         }
       })
+      
 
       .state('tab.tickets', {
         url: '/tickets',
