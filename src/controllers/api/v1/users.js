@@ -1,3 +1,6 @@
+/* eslint-disable object-shorthand */
+/* eslint-disable no-unused-vars */
+/* eslint-disable camelcase */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888
@@ -347,6 +350,7 @@ apiUsers.adapterUserCreate = async function (req, res) {
             Group.name = `${postData.aUsername} Group`;
             Group.members = [a._id];
             Group.sendMailTo = [a._id];
+            // eslint-disable-next-line camelcase
             let group_data
           try {
             group_data = await Group.save();
@@ -359,6 +363,7 @@ apiUsers.adapterUserCreate = async function (req, res) {
 
 
             async.each(
+              // eslint-disable-next-line camelcase
               group_data._id,
               function (id, done) {
                 if (_.isUndefined(id)) return done();

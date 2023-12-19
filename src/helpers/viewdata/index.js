@@ -12,31 +12,31 @@
  *  Copyright (c) 2014-2019. All rights reserved.
  */
 
-const async = require('async')
-const _ = require('lodash')
-const winston = require('../../logger')
-const moment = require('moment')
-const settingSchema = require('../../models/setting')
-const settingsUtil = require('../../settings/settingsUtil')
+const async = require('async');
+const _ = require('lodash');
+const winston = require('../../logger');
+const moment = require('moment');
+const settingSchema = require('../../models/setting');
+const settingsUtil = require('../../settings/settingsUtil');
 
-const viewController = {}
-const viewdata = {}
-viewdata.users = {}
+const viewController = {};
+const viewdata = {};
+viewdata.users = {};
 
 viewController.getData = function (request, cb) {
   async.parallel(
     [
       function (callback) {
         if (global.env === 'development') {
-          require('../../sass/buildsass').build(callback)
+          require('../../sass/buildsass').build(callback);
         } else {
-          return callback()
+          return callback();
         }
       },
       function (callback) {
-        const packageJson = require('../../../package.json')
-        viewdata.version = packageJson.version
-        return callback()
+        const packageJson = require('../../../package.json');
+        viewdata.version = packageJson.version;
+        return callback();
       },
       function (callback) {
         async.parallel(
@@ -44,106 +44,106 @@ viewController.getData = function (request, cb) {
             function (done) {
               settingSchema.getSetting('gen:timeFormat', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.timeFormat = setting.value
+                  viewdata.timeFormat = setting.value;
                 } else {
-                  viewdata.timeFormat = 'hh:mma'
+                  viewdata.timeFormat = 'hh:mma';
                 }
 
-                return done()
-              })
+                return done();
+              });
             },
             function (done) {
               settingSchema.getSetting('gen:shortDateFormat', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.shortDateFormat = setting.value
+                  viewdata.shortDateFormat = setting.value;
                 } else {
-                  viewdata.shortDateFormat = 'MM/DD/YYYY'
+                  viewdata.shortDateFormat = 'MM/DD/YYYY';
                 }
 
-                return done()
-              })
+                return done();
+              });
             },
             function (done) {
               settingSchema.getSetting('gen:longDateFormat', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.longDateFormat = setting.value
+                  viewdata.longDateFormat = setting.value;
                 } else {
-                  viewdata.longDateFormat = 'MMM DD, YYYY'
+                  viewdata.longDateFormat = 'MMM DD, YYYY';
                 }
 
-                return done()
-              })
-            }
+                return done();
+              });
+            },
           ],
           callback
-        )
+        );
       },
       function (callback) {
-        viewdata.ticketSettings = {}
+        viewdata.ticketSettings = {};
         async.parallel(
           [
             function (done) {
               settingSchema.getSetting('playNewTicketSound:enable', function (err, setting) {
                 if (!err && setting && !_.isUndefined(setting.value)) {
-                  viewdata.ticketSettings.playNewTicketSound = setting.value
+                  viewdata.ticketSettings.playNewTicketSound = setting.value;
                 } else {
-                  viewdata.ticketSettings.playNewTicketSound = true
+                  viewdata.ticketSettings.playNewTicketSound = true;
                 }
-              })
+              });
 
-              return done()
+              return done();
             },
             function (done) {
               settingSchema.getSetting('ticket:minlength:subject', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.ticketSettings.minSubject = setting.value
+                  viewdata.ticketSettings.minSubject = setting.value;
                 } else {
-                  viewdata.ticketSettings.minSubject = 10
+                  viewdata.ticketSettings.minSubject = 10;
                 }
 
-                return done()
-              })
+                return done();
+              });
             },
             function (done) {
               settingSchema.getSetting('ticket:minlength:issue', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.ticketSettings.minIssue = setting.value
+                  viewdata.ticketSettings.minIssue = setting.value;
                 } else {
-                  viewdata.ticketSettings.minIssue = 10
+                  viewdata.ticketSettings.minIssue = 10;
                 }
 
-                return done()
-              })
+                return done();
+              });
             },
             function (done) {
               settingSchema.getSetting('allowAgentUserTickets:enable', function (err, setting) {
                 if (!err && setting && setting.value) {
-                  viewdata.ticketSettings.allowAgentUserTickets = setting.value
+                  viewdata.ticketSettings.allowAgentUserTickets = setting.value;
                 } else {
-                  viewdata.ticketSettings.allowAgentUserTickets = false
+                  viewdata.ticketSettings.allowAgentUserTickets = false;
                 }
 
-                return done()
-              })
-            }
+                return done();
+              });
+            },
           ],
           callback
-        )
+        );
       },
       function (callback) {
         settingSchema.getSetting('gen:sitetitle', function (err, setting) {
           if (!err && setting && setting.value) {
-            viewdata.siteTitle = setting.value
+            viewdata.siteTitle = setting.value;
           } else {
-            viewdata.siteTitle = 'Trudesk'
+            viewdata.siteTitle = 'Trudesk';
           }
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
-        viewdata.hostname = request.hostname
-        viewdata.hosturl = request.protocol + '://' + request.get('host')
+        viewdata.hostname = request.hostname;
+        viewdata.hosturl = request.protocol + '://' + request.get('host');
 
         // If hosturl setting is not set. Let's set it.
         settingSchema.getSetting('gen:siteurl', function (err, setting) {
@@ -151,102 +151,102 @@ viewController.getData = function (request, cb) {
             settingSchema.create(
               {
                 name: 'gen:siteurl',
-                value: viewdata.hosturl
+                value: viewdata.hosturl,
               },
               function (err, setting) {
-                if (err) return callback()
-                if (!global.TRUDESK_BASEURL) global.TRUDESK_BASEURL = setting.value
+                if (err) return callback();
+                if (!global.TRUDESK_BASEURL) global.TRUDESK_BASEURL = setting.value;
 
-                return callback()
+                return callback();
               }
-            )
+            );
           } else {
-            return callback()
+            return callback();
           }
-        })
+        });
       },
       function (callback) {
         settingSchema.getSetting('gen:timezone', function (err, timezone) {
           if (!err && timezone) {
-            viewdata.timezone = timezone.value
+            viewdata.timezone = timezone.value;
           } else {
-            viewdata.timezone = 'America/New_York'
+            viewdata.timezone = 'America/New_York';
           }
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
         settingSchema.getSetting('gen:customlogo', function (err, hasCustomLogo) {
-          viewdata.hasCustomLogo = !!(!err && hasCustomLogo && hasCustomLogo.value)
+          viewdata.hasCustomLogo = !!(!err && hasCustomLogo && hasCustomLogo.value);
 
           if (!viewdata.hasCustomLogo) {
-            viewdata.logoImage = '/img/defaultLogoLight.png'
-            return callback()
+            viewdata.logoImage = '/img/defaultLogoLight.png';
+            return callback();
           }
 
           settingSchema.getSetting('gen:customlogofilename', function (err, logoFileName) {
             if (!err && logoFileName && !_.isUndefined(logoFileName.value)) {
-              viewdata.logoImage = '/assets/' + logoFileName.value
+              viewdata.logoImage = '/assets/' + logoFileName.value;
             } else {
-              viewdata.logoImage = '/img/defaultLogoLight.png'
+              viewdata.logoImage = '/img/defaultLogoLight.png';
             }
 
-            return callback()
-          })
-        })
+            return callback();
+          });
+        });
       },
       function (callback) {
         settingSchema.getSetting('gen:custompagelogo', function (err, hasCustomPageLogo) {
-          viewdata.hasCustomPageLogo = !!(!err && hasCustomPageLogo && hasCustomPageLogo.value)
+          viewdata.hasCustomPageLogo = !!(!err && hasCustomPageLogo && hasCustomPageLogo.value);
 
           if (!viewdata.hasCustomPageLogo) {
-            viewdata.pageLogoImage = '/img/defaultLogoDark.png'
-            return callback()
+            viewdata.pageLogoImage = '/img/defaultLogoDark.png';
+            return callback();
           }
 
           settingSchema.getSetting('gen:custompagelogofilename', function (err, logoFileName) {
             if (!err && logoFileName && !_.isUndefined(logoFileName.value)) {
-              viewdata.pageLogoImage = '/assets/' + logoFileName.value
+              viewdata.pageLogoImage = '/assets/' + logoFileName.value;
             } else {
-              viewdata.pageLogoImage = '/img/defaultLogoDark.png'
+              viewdata.pageLogoImage = '/img/defaultLogoDark.png';
             }
 
-            return callback()
-          })
-        })
+            return callback();
+          });
+        });
       },
       function (callback) {
         settingSchema.getSetting('gen:customfavicon', function (err, hasCustomFavicon) {
-          viewdata.hasCustomFavicon = !!(!err && hasCustomFavicon && hasCustomFavicon.value)
+          viewdata.hasCustomFavicon = !!(!err && hasCustomFavicon && hasCustomFavicon.value);
           if (!viewdata.hasCustomFavicon) {
-            viewdata.favicon = '/img/favicon.ico'
-            return callback()
+            viewdata.favicon = '/img/favicon.ico';
+            return callback();
           }
 
           settingSchema.getSetting('gen:customfaviconfilename', function (err, faviconFilename) {
             if (!err && faviconFilename && !_.isUndefined(faviconFilename.value)) {
-              viewdata.favicon = '/assets/' + faviconFilename.value
+              viewdata.favicon = '/assets/' + faviconFilename.value;
             } else {
-              viewdata.favicon = '/img/favicon.ico'
+              viewdata.favicon = '/img/favicon.ico';
             }
 
-            return callback()
-          })
-        })
+            return callback();
+          });
+        });
       },
       function (callback) {
         viewController.getActiveNotice(function (err, data) {
-          if (err) return callback(err)
-          viewdata.notice = data
-          viewdata.noticeCookieName = undefined
+          if (err) return callback(err);
+          viewdata.notice = data;
+          viewdata.noticeCookieName = undefined;
 
           if (!_.isUndefined(data) && !_.isNull(data)) {
-            viewdata.noticeCookieName = data.name + '_' + moment(data.activeDate).format('MMMDDYYYY_HHmmss')
+            viewdata.noticeCookieName = data.name + '_' + moment(data.activeDate).format('MMMDDYYYY_HHmmss');
           }
 
-          return callback()
-        })
+          return callback();
+        });
       },
       // function (callback) {
       //   viewController.getUserNotifications(request, function (err, data) {
@@ -313,12 +313,12 @@ viewController.getData = function (request, cb) {
       // },
       function (callback) {
         viewController.getDefaultTicketType(request, function (err, data) {
-          if (err) return callback()
+          if (err) return callback();
 
-          viewdata.defaultTicketType = data
+          viewdata.defaultTicketType = data;
 
-          return callback()
-        })
+          return callback();
+        });
       },
       // function (callback) {
       //   viewController.getPriorities(request, function (err, data) {
@@ -356,395 +356,395 @@ viewController.getData = function (request, cb) {
       // },
       function (callback) {
         viewController.getShowTourSetting(request, function (err, data) {
-          if (err) return callback(err)
+          if (err) return callback(err);
 
-          viewdata.showTour = data
+          viewdata.showTour = data;
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
         viewController.getOverdueSetting(request, function (err, data) {
-          if (err) return callback(err)
+          if (err) return callback(err);
 
-          viewdata.showOverdue = data
+          viewdata.showOverdue = data;
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
         settingsUtil.getSettings(function (err, res) {
-          if (err) return callback(err)
+          if (err) return callback(err);
 
-          viewdata.hasThirdParty = res.data.settings.hasThirdParty
+          viewdata.hasThirdParty = res.data.settings.hasThirdParty;
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
         settingsUtil.getSettings(function (err, res) {
-          if (err) return callback(err)
+          if (err) return callback(err);
 
-          viewdata.accountsPasswordComplexity = res.data.settings.accountsPasswordComplexity.value
+          viewdata.accountsPasswordComplexity = res.data.settings.accountsPasswordComplexity.value;
 
-          return callback()
-        })
+          return callback();
+        });
       },
       function (callback) {
         viewController.getPluginsInfo(request, function (err, data) {
-          if (err) return callback(err)
+          if (err) return callback(err);
 
-          viewdata.plugins = data
+          viewdata.plugins = data;
 
-          return callback()
-        })
-      }
+          return callback();
+        });
+      },
     ],
     function (err) {
       if (err) {
-        winston.warn('Error: ' + err)
+        winston.warn('Error: ' + err);
       }
 
-      return cb(viewdata)
+      return cb(viewdata);
     }
-  )
-}
+  );
+};
 
 viewController.getActiveNotice = function (callback) {
-  const noticeSchema = require('../../models/notice')
+  const noticeSchema = require('../../models/notice');
   noticeSchema.getActive(function (err, notice) {
     if (err) {
-      winston.warn(err.message)
-      return callback(err)
+      winston.warn(err.message);
+      return callback(err);
     }
 
-    return callback(null, notice)
-  })
-}
+    return callback(null, notice);
+  });
+};
 
 viewController.getUserNotifications = function (request, callback) {
-  const notificationsSchema = require('../../models/notification')
+  const notificationsSchema = require('../../models/notification');
   notificationsSchema.findAllForUser(request.user._id, function (err, data) {
     if (err) {
-      winston.warn(err.message)
-      return callback(err)
+      winston.warn(err.message);
+      return callback(err);
     }
 
-    return callback(null, data)
-  })
-}
+    return callback(null, data);
+  });
+};
 
 viewController.getUnreadNotificationsCount = function (request, callback) {
-  const notificationsSchema = require('../../models/notification')
+  const notificationsSchema = require('../../models/notification');
   notificationsSchema.getUnreadCount(request.user._id, function (err, count) {
     if (err) {
-      winston.warn(err.message)
-      return callback(err)
+      winston.warn(err.message);
+      return callback(err);
     }
 
-    return callback(null, count)
-  })
-}
+    return callback(null, count);
+  });
+};
 
 viewController.getConversations = function (request, callback) {
-  const conversationSchema = require('../../models/chat/conversation')
-  const messageSchema = require('../../models/chat/message')
+  const conversationSchema = require('../../models/chat/conversation');
+  const messageSchema = require('../../models/chat/message');
   conversationSchema.getConversationsWithLimit(request.user._id, 10, function (err, conversations) {
     if (err) {
-      winston.warn(err.message)
-      return callback(err)
+      winston.warn(err.message);
+      return callback(err);
     }
 
-    const convos = []
+    const convos = [];
 
     async.eachSeries(
       conversations,
       function (convo, done) {
-        const c = convo.toObject()
+        const c = convo.toObject();
 
         const userMeta =
           convo.userMeta[
             _.findIndex(convo.userMeta, function (item) {
-              return item.userId.toString() === request.user._id.toString()
+              return item.userId.toString() === request.user._id.toString();
             })
-          ]
+          ];
         if (!_.isUndefined(userMeta) && !_.isUndefined(userMeta.deletedAt) && userMeta.deletedAt > convo.updatedAt) {
-          return done()
+          return done();
         }
 
         messageSchema.getMostRecentMessage(c._id, function (err, rm) {
-          if (err) return done(err)
+          if (err) return done(err);
 
           _.each(c.participants, function (p) {
             if (p._id.toString() !== request.user._id.toString()) {
-              c.partner = p
+              c.partner = p;
             }
-          })
+          });
 
-          rm = _.first(rm)
+          rm = _.first(rm);
 
           if (!_.isUndefined(rm)) {
             if (String(c.partner._id) === String(rm.owner._id)) {
-              c.recentMessage = c.partner.fullname + ': ' + rm.body
+              c.recentMessage = c.partner.fullname + ': ' + rm.body;
             } else {
-              c.recentMessage = 'You: ' + rm.body
+              c.recentMessage = 'You: ' + rm.body;
             }
           } else {
-            c.recentMessage = 'New Conversation'
+            c.recentMessage = 'New Conversation';
           }
 
-          convos.push(c)
+          convos.push(c);
 
-          return done()
-        })
+          return done();
+        });
       },
       function (err) {
-        return callback(err, convos)
+        return callback(err, convos);
       }
-    )
-  })
-}
+    );
+  });
+};
 
 viewController.getUsers = function (request, callback) {
-  const userSchema = require('../../models/user')
+  const userSchema = require('../../models/user');
   if (request.user.role.isAdmin || request.user.role.isAgent) {
     userSchema.findAll(function (err, users) {
       if (err) {
-        winston.warn(err)
-        return callback()
+        winston.warn(err);
+        return callback();
       }
 
       let u = _.reject(users, function (u) {
-        return u.deleted === true
-      })
-      u.password = null
-      u.role = null
-      u.resetPassHash = null
-      u.resetPassExpire = null
-      u.accessToken = null
-      u.iOSDeviceTokens = null
-      u.preferences = null
-      u.tOTPKey = null
+        return u.deleted === true;
+      });
+      u.password = null;
+      u.role = null;
+      u.resetPassHash = null;
+      u.resetPassExpire = null;
+      u.accessToken = null;
+      u.iOSDeviceTokens = null;
+      u.preferences = null;
+      u.tOTPKey = null;
 
-      u = _.sortBy(u, 'fullname')
+      u = _.sortBy(u, 'fullname');
 
-      return callback(u)
-    })
+      return callback(u);
+    });
   } else {
-    const groupSchema = require('../../models/group')
+    const groupSchema = require('../../models/group');
     groupSchema.getAllGroupsOfUser(request.user._id, function (err, groups) {
-      if (err) return callback(err)
+      if (err) return callback(err);
 
       let users = _.map(groups, function (g) {
         return _.map(g.members, function (m) {
-          const mFiltered = m
-          m.password = null
-          m.role = null
-          m.resetPassHash = null
-          m.resetPassExpire = null
-          m.accessToken = null
-          m.iOSDeviceTokens = null
-          m.preferences = null
-          m.tOTPKey = null
+          const mFiltered = m;
+          m.password = null;
+          m.role = null;
+          m.resetPassHash = null;
+          m.resetPassExpire = null;
+          m.accessToken = null;
+          m.iOSDeviceTokens = null;
+          m.preferences = null;
+          m.tOTPKey = null;
 
-          return mFiltered
-        })
-      })
+          return mFiltered;
+        });
+      });
 
       users = _.chain(users)
         .flattenDeep()
         .uniqBy(function (i) {
-          return i._id
+          return i._id;
         })
         .sortBy('fullname')
-        .value()
+        .value();
 
-      return callback(users)
-    })
+      return callback(users);
+    });
   }
-}
+};
 
 viewController.loggedInAccount = function (request, callback) {
-  const userSchema = require('../../models/user')
+  const userSchema = require('../../models/user');
   userSchema.getUser(request.user._id, function (err, data) {
     if (err) {
-      return callback(err)
+      return callback(err);
     }
 
-    return callback(data)
-  })
-}
+    return callback(data);
+  });
+};
 
 viewController.getTeams = function (request, callback) {
-  const Team = require('../../models/team')
-  return Team.getTeams(callback)
-}
+  const Team = require('../../models/team');
+  return Team.getTeams(callback);
+};
 
 viewController.getGroups = function (request, callback) {
-  const groupSchema = require('../../models/group')
-  const Department = require('../../models/department')
+  const groupSchema = require('../../models/group');
+  const Department = require('../../models/department');
   if (request.user.role.isAdmin || request.user.role.isAgent) {
     Department.getDepartmentGroupsOfUser(request.user._id, function (err, groups) {
       if (err) {
-        winston.debug(err)
-        return callback(err)
+        winston.debug(err);
+        return callback(err);
       }
 
-      return callback(null, groups)
-    })
+      return callback(null, groups);
+    });
   } else {
     groupSchema.getAllGroupsOfUserNoPopulate(request.user._id, function (err, data) {
       if (err) {
-        winston.debug(err)
-        return callback(err)
+        winston.debug(err);
+        return callback(err);
       }
 
-      const p = require('../../permissions')
+      const p = require('../../permissions');
       if (p.canThis(request.user.role, 'ticket:public')) {
         groupSchema.getAllPublicGroups(function (err, groups) {
           if (err) {
-            winston.debug(err)
-            return callback(err)
+            winston.debug(err);
+            return callback(err);
           }
 
-          data = data.concat(groups)
-          return callback(null, data)
-        })
+          data = data.concat(groups);
+          return callback(null, data);
+        });
       } else {
-        return callback(null, data)
+        return callback(null, data);
       }
-    })
+    });
   }
-}
+};
 
 viewController.getTypes = function (request, callback) {
-  const typeSchema = require('../../models/tickettype')
+  const typeSchema = require('../../models/tickettype');
 
   typeSchema.getTypes(function (err, data) {
     if (err) {
-      winston.debug(err)
-      return callback(err)
+      winston.debug(err);
+      return callback(err);
     }
 
-    return callback(null, data)
-  })
-}
+    return callback(null, data);
+  });
+};
 
 viewController.getDefaultTicketType = function (request, callback) {
-  const settingSchema = require('../../models/setting')
+  const settingSchema = require('../../models/setting');
   settingSchema.getSetting('ticket:type:default', function (err, defaultType) {
     if (err) {
-      winston.debug('Error viewController:getDefaultTicketType: ', err)
-      return callback(err)
+      winston.debug('Error viewController:getDefaultTicketType: ', err);
+      return callback(err);
     }
 
-    const typeSchema = require('../../models/tickettype')
-    typeSchema.getType(defaultType.value, function (err, type) {
+    const typeSchema = require('../../models/tickettype');
+    typeSchema.getType(defaultType?.value, function (err, type) {
       if (err) {
-        winston.debug('Error viewController:getDefaultTicketType: ', err)
-        return callback(err)
+        winston.debug('Error viewController:getDefaultTicketType: ', err);
+        return callback(err);
       }
 
-      return callback(null, type)
-    })
-  })
-}
+      return callback(null, type);
+    });
+  });
+};
 
 viewController.getPriorities = function (request, callback) {
-  const ticketPrioritySchema = require('../../models/ticketpriority')
+  const ticketPrioritySchema = require('../../models/ticketpriority');
   ticketPrioritySchema.getPriorities(function (err, priorities) {
     if (err) {
-      winston.debug('Error viewController:getPriorities: ' + err)
-      return callback(err)
+      winston.debug('Error viewController:getPriorities: ' + err);
+      return callback(err);
     }
 
-    priorities = _.sortBy(priorities, ['migrationNum', 'name'])
+    priorities = _.sortBy(priorities, ['migrationNum', 'name']);
 
-    return callback(null, priorities)
-  })
-}
+    return callback(null, priorities);
+  });
+};
 
 viewController.getTags = function (request, callback) {
-  const tagSchema = require('../../models/tag')
+  const tagSchema = require('../../models/tag');
 
   tagSchema.getTags(function (err, data) {
     if (err) {
-      winston.debug(err)
-      return callback(err)
+      winston.debug(err);
+      return callback(err);
     }
 
     // data = _.sortBy(data, 'name');
 
-    return callback(null, data)
-  })
-}
+    return callback(null, data);
+  });
+};
 
 viewController.getOverdueSetting = function (request, callback) {
-  const settingSchema = require('../../models/setting')
+  const settingSchema = require('../../models/setting');
   settingSchema.getSettingByName('showOverdueTickets:enable', function (err, data) {
     if (err) {
-      winston.debug(err)
-      return callback(null, true)
+      winston.debug(err);
+      return callback(null, true);
     }
-    if (_.isNull(data)) return callback(null, true)
-    return callback(null, data.value)
-  })
-}
+    if (_.isNull(data)) return callback(null, true);
+    return callback(null, data.value);
+  });
+};
 
 viewController.getShowTourSetting = function (request, callback) {
-  if (!request.user) return callback('Invalid User')
+  if (!request.user) return callback('Invalid User');
 
-  const settingSchema = require('../../models/setting')
+  const settingSchema = require('../../models/setting');
   settingSchema.getSettingByName('showTour:enable', function (err, data) {
     if (err) {
-      winston.debug(err)
-      return callback(null, true)
+      winston.debug(err);
+      return callback(null, true);
     }
 
     if (!_.isNull(data) && !_.isUndefined(data) && data === false) {
-      return callback(null, true)
+      return callback(null, true);
     }
 
-    const userSchema = require('../../models/user')
+    const userSchema = require('../../models/user');
     userSchema.getUser(request.user._id, function (err, user) {
-      if (err) return callback(err)
+      if (err) return callback(err);
 
-      let hasTourCompleted = false
+      let hasTourCompleted = false;
 
       if (user.preferences.tourCompleted) {
-        hasTourCompleted = user.preferences.tourCompleted
+        hasTourCompleted = user.preferences.tourCompleted;
       }
 
-      if (hasTourCompleted) return callback(null, false)
+      if (hasTourCompleted) return callback(null, false);
 
-      if (_.isNull(data)) return callback(null, true)
+      if (_.isNull(data)) return callback(null, true);
 
-      return callback(null, data.value)
-    })
-  })
-}
+      return callback(null, data.value);
+    });
+  });
+};
 
 viewController.getPluginsInfo = function (request, callback) {
   // Load Plugin routes
-  const dive = require('dive')
-  const path = require('path')
-  const fs = require('fs')
-  const pluginDir = path.join(__dirname, '../../../plugins')
-  if (!fs.existsSync(pluginDir)) fs.mkdirSync(pluginDir)
-  const plugins = []
+  const dive = require('dive');
+  const path = require('path');
+  const fs = require('fs');
+  const pluginDir = path.join(__dirname, '../../../plugins');
+  if (!fs.existsSync(pluginDir)) fs.mkdirSync(pluginDir);
+  const plugins = [];
   dive(
     pluginDir,
     { directories: true, files: false, recursive: false },
     function (err, dir) {
-      if (err) throw err
-      delete require.cache[require.resolve(path.join(dir, '/plugin.json'))]
-      const pluginPackage = require(path.join(dir, '/plugin.json'))
-      plugins.push(pluginPackage)
+      if (err) throw err;
+      delete require.cache[require.resolve(path.join(dir, '/plugin.json'))];
+      const pluginPackage = require(path.join(dir, '/plugin.json'));
+      plugins.push(pluginPackage);
     },
     function () {
-      return callback(null, _.sortBy(plugins, 'name'))
+      return callback(null, _.sortBy(plugins, 'name'));
     }
-  )
-}
+  );
+};
 
-module.exports = viewController
+module.exports = viewController;

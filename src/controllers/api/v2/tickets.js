@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888
@@ -138,7 +139,6 @@ ticketsV2.single = async function (req, res) {
     } else {
       Models.Group.getAllGroupsOfUser(req.user._id, function (err, userGroups) {
         if (err) return apiUtils.sendApiError(res, 500, err);
-
         const groupIds = userGroups.map(function (m) {
           return m._id.toString();
         });

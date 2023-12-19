@@ -1,3 +1,6 @@
+/* eslint-disable no-undef */
+/* eslint-disable camelcase */
+/* eslint-disable complexity */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888

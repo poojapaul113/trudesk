@@ -1,3 +1,7 @@
+/* eslint-disable object-shorthand */
+/* eslint-disable no-var */
+/* eslint-disable no-unused-vars */
+/* eslint-disable camelcase */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888
@@ -50,7 +54,7 @@ module.exports = function (middleware, router, controllers) {
 
       const role_data = await roleSchmea.find({});
 
-      postData.aRole = role_data[2]._id;
+      postData.aRole = role_data[0]._id;
 
       if (_.isUndefined(postData) || !_.isObject(postData)) {
         return res.status(400).json({ success: false, error: 'Invalid Post Data' });
@@ -346,18 +350,17 @@ module.exports = function (middleware, router, controllers) {
           error: 'UnAuthorised',
         });
       }
-      const issue = await issueModel
-        .findOne({
-          transaction_id: req.params.transaction_id,
-          userId: user._id,
-        });
+      const issue = await issueModel.findOne({
+        transaction_id: req.params.transaction_id,
+        userId: user._id,
+      });
 
-        if (!issue) {
-          return res.status(401).json({
-            success: false,
-            error: 'No issue found for this user and transaction_id',
-          });
-        }
+      if (!issue) {
+        return res.status(401).json({
+          success: false,
+          error: 'No issue found for this user and transaction_id',
+        });
+      }
 
       return res.status(200).json({
         success: true,
