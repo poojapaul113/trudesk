@@ -106,17 +106,12 @@ module.exports = function (middleware, router, controllers) {
       Group.members = [adminUser._id];
       Group.sendMailTo = [adminUser._id];
 
-      const Team = new TeamSchema({ name: `${postData.username} Team new`, members: [adminUser._id] });
-
-      const team_data = await Team.save();
-
       const admin_data = await adminUser.save();
       const group_data = await Group.save();
       return res.status(200).json({
         message: 'user registered',
         admin: admin_data,
         group: group_data,
-        team: team_data,
       });
     } catch (e) {
       return res.status(400).json({ success: false, error: e.message });
@@ -335,7 +330,7 @@ module.exports = function (middleware, router, controllers) {
   router.post('/api/v1/editor/assets/upload', apiv1, isAdmin, controllers.editor.assetsUpload);
 
   // Issues
-  router.post('/api/v1/issue/save', apiv1, isAdmin, apiCtrl.issues.create);
+  router.post('/api/v1/issue/save', apiv1, apiCtrl.issues.create);
   router.get('/api/v1/issue/:transaction_id', async (req, res) => {
     try {
       var issueModel = require('../../../models/issue');
@@ -361,6 +356,39 @@ module.exports = function (middleware, router, controllers) {
           error: 'No issue found for this user and transaction_id',
         });
       }
+
+      return res.status(200).json({
+        success: true,
+        issue,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+  });
+
+  router.patch('/api/v1/issue/:transaction_id', async (req, res) => {
+    try {
+      var issueModel = require('../../../models/issue');
+      var UserSchema = require('../../../models/user');
+
+      const auth_header = req.headers.accesstoken;
+      const user = await UserSchema.findOne({ accessToken: auth_header });
+
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'UnAuthorised',
+        });
+      }
+      const issue = await issueModel.updateOne({
+        transaction_id: req.params.transaction_id,
+      }, 
+      {
+        issue_status: req.query.status
+      });
 
       return res.status(200).json({
         success: true,

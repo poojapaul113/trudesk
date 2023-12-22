@@ -26,7 +26,7 @@ const mongoConnectionUri = {
   shard: process.env.TD_MONGODB_SHARD || nconf.get('mongo:shard'),
 };
 
-let CONNECTION_URI = 'mongodb://localhost:27017';
+let CONNECTION_URI = 'mongodb://mongo:27017';
 // if (!mongoConnectionUri.username) {
 //   CONNECTION_URI =
 //     'mongodb://' + mongoConnectionUri.server + ':' + mongoConnectionUri.port + '/' + mongoConnectionUri.database

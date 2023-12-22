@@ -50,13 +50,13 @@ ticketsV2.get = async (req, res) => {
 
   try {
     let groups = [];
-    groups = await Models.Group.getAllGroupsOfUser(req.user._id);
-    // if (req.user.role.isAdmin || req.user.role.isAgent) {
-    //   const dbGroups = await Models.Department.getDepartmentGroupsOfUser(req.user._id)
-    //   groups = dbGroups.map(g => g._id)
-    // } else {
-    //   groups = await Models.Group.getAllGroupsOfUser(req.user._id)
-    // }
+    // groups = await Models.Group.getAllGroupsOfUser(req.user._id);
+    if (req.user.role.isAdmin || req.user.role.isAgent) {
+      const dbGroups = await Models.Department.getDepartmentGroupsOfUser(req.user._id);
+      groups = dbGroups.map((g) => g._id);
+    } else {
+      groups = await Models.Group.getAllGroupsOfUser(req.user._id);
+    }
 
     const mappedGroups = groups.map((g) => g._id);
 

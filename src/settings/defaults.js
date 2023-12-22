@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /*
       .                              .o8                     oooo
    .o8                             "888                     `888
@@ -894,7 +895,7 @@ function addDefaultTeamAndAdmin(callback) {
               isLocked: true,
             },
             {
-              name: 'Closed',
+              name: 'Resolved',
               htmlColor: '#CCCCCC',
               uid: 3,
               order: 3,

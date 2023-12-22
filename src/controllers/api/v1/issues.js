@@ -1,23 +1,37 @@
-var winston = require('../../../logger')
+/* eslint-disable camelcase */
+/* eslint-disable no-var */
+/* eslint-disable object-shorthand */
+var winston = require('../../../logger');
 
-const apiIssues = {}
+const apiIssues = {};
 
-apiIssues.create = function (req, res) {
-  const IssueSchema = require('../../../models/issue')
-  const issueSchema = req.body
-  winston.warn('Public account creation was attempted while disabled!',issueSchema)
+apiIssues.create = async function (req, res) {
+  const IssueSchema = require('../../../models/issue');
+  var UserSchema = require('../../../models/user');
+  const issueSchema = req.body;
+  const auth_header = req.headers.accesstoken;
+  const user = await UserSchema.findOne({ accessToken: auth_header });
 
-    // Issue Creation
-    const issue = new IssueSchema({
-      ...issueSchema
-    })
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      error: 'UnAuthorised',
+    });
+  }
 
-    issue.save(function (err, issue) {
-    if (err) return res.status(400).json({ success: false, error: 'Error: ' + err.message })
+  issueSchema.userId = user._id;
+  winston.warn('Public account creation was attempted while disabled!', issueSchema);
 
-    res.json({ success: true, error: null, issue: issue })
-  })
-    
-}
+  // Issue Creation
+  const issue = new IssueSchema({
+    ...issueSchema,
+  });
 
-module.exports = apiIssues
+  issue.save(function (err, issue) {
+    if (err) return res.status(400).json({ success: false, error: 'Error: ' + err.message });
+
+    res.json({ success: true, error: null, issue: issue });
+  });
+};
+
+module.exports = apiIssues;
