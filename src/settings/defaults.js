@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+/* eslint-disable object-shorthand */
 /* eslint-disable no-unused-vars */
 /*
       .                              .o8                     oooo
