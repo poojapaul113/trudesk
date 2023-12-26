@@ -215,9 +215,7 @@ middleware.canUser = function (action) {
   return function (req, res, next) {
     if (!req.user) return res.status(401).json({ success: false, error: 'Not Authorized for this API call.' });
     const permissions = require('../permissions');
-    console.log('---req.user.role---', req.user.role, action);
     const perm = permissions.canThis(req.user.role, action);
-    console.log('---perm---', perm);
     if (perm) return next();
 
     return res.status(401).json({ success: false, error: 'Not Authorized for this API call.' });
