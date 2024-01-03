@@ -119,7 +119,13 @@ class StatusSelector extends React.Component {
                   <li
                     key={s.get('_id')}
                     className='ticket-status'
-                    onClick={() => this.changeStatus(s.get('_id'))}
+                    onClick={() => {
+                      if(s.get('name') !== "Resolved"){
+                      this.changeStatus(s.get('_id'))
+                      }else {
+                        if (this.props.openModal) this.props.openModal(s.get('_id'))
+                      }
+                    }}
                     style={{ color: 'white', background: s.get('htmlColor') }}
                   >
                     <span>{s.get('name')}</span>
@@ -137,6 +143,7 @@ StatusSelector.propTypes = {
   ticketId: PropTypes.string.isRequired,
   status: PropTypes.string.isRequired,
   onStatusChange: PropTypes.func,
+  openModal: PropTypes.func,
   hasPerm: PropTypes.bool.isRequired,
   socket: PropTypes.object.isRequired,
   fetchTicketStatus: PropTypes.func.isRequired,

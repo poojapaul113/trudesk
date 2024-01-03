@@ -19,11 +19,11 @@ import { observable, computed, makeObservable } from 'mobx';
 import { observer } from 'mobx-react';
 import sortBy from 'lodash/sortBy';
 import union from 'lodash/union';
-
+import Button from 'components/Button';
 import { transferToThirdParty, fetchTicketTypes, fetchTicketStatus } from 'actions/tickets';
 import { fetchGroups, unloadGroups } from 'actions/groups';
 import { showModal } from 'actions/common';
-
+import Modal from 'react-modal';
 import {
   TICKETS_UPDATE,
   TICKETS_UI_GROUP_UPDATE,
@@ -40,7 +40,6 @@ import {
   TICKETS_COMMENT_NOTE_REMOVE,
   TICKETS_COMMENT_NOTE_SET,
 } from 'serverSocket/socketEventConsts';
-
 import AssigneeDropdownPartial from 'containers/Tickets/AssigneeDropdownPartial';
 import Avatar from 'components/Avatar/Avatar';
 import CommentNotePartial from 'containers/Tickets/CommentNotePartial';
@@ -109,7 +108,36 @@ class SingleTicketContainer extends React.Component {
     this.onUpdateTicketGroup = this.onUpdateTicketGroup.bind(this);
     this.onUpdateTicketDueDate = this.onUpdateTicketDueDate.bind(this);
     this.onUpdateTicketTags = this.onUpdateTicketTags.bind(this);
+
+    this.state = {
+      modalIsOpen: false,
+      long_description: '',
+      short_description: '',
+      statusId: '',
+      issue: {},
+      resolution_action: '',
+      refund_amount: ''
+    };
+
+    this.openModal = this.openModal.bind(this);
+    this.closeModal = this.closeModal.bind(this);
   }
+
+  async getIssue() {
+    const issue = await axios
+    .get(`/api/v1/issue/${this.ticket.transaction_id}`)
+
+    this.setState({ ...this.state, issue });
+  }
+
+  openModal = (id) => {
+    this.getIssue();
+    this.setState({ ...this.state, statusId: id, modalIsOpen: true });
+  };
+
+  closeModal = () => {
+    this.setState({ ...this.state, modalIsOpen: false });
+  };
 
   @computed
   get notesTagged() {
@@ -241,6 +269,44 @@ class SingleTicketContainer extends React.Component {
       });
   }
 
+  async submitTheForm() {
+    console.log(
+      '🚀 ~ file: SingleTicketContainer.jsx:284 ~ SingleTicketContainer ~ .then ~ this.state.statusId:',
+      this.state.statusId
+    );
+
+    Promise.all([
+      axios
+      .post('/api/v1/tickets/addcomment', {
+        _id: this.ticket._id,
+        comment: this.state.long_description,
+        ticketid: false,
+        note: false,
+      }),
+      axios
+      .put(`/api/v1/tickets/${this.ticket._id}`, {
+        status: this.state.statusId,
+      }),
+      axios
+      .patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
+    ])
+    
+    // axios
+    //   .post('/api/v1/tickets/addcomment', {
+    //     _id: this.ticket._id,
+    //     comment: this.state.long_description,
+    //     ticketid: false,
+    //     note: false,
+    //   })
+    //   .then((value) => {
+    //     axios
+    //       .put(`/api/v1/tickets/${this.ticket._id}`, {
+    //         status: this.state.statusId,
+    //       })
+    //       .then((res) => console.log('response--------', res));
+    //   });
+  }
+
   onSubscriberChanged(e) {
     axios
       .put(`/api/v1/tickets/${this.ticket._id}/subscribe`, {
@@ -293,6 +359,9 @@ class SingleTicketContainer extends React.Component {
       }
     };
 
+    console.log('this.state', this.state);
+    console.log('this.ticket', this.ticket);
+
     return (
       <div className={'uk-clearfix uk-position-relative'} style={{ width: '100%', height: '100vh' }}>
         {!this.ticket && <SpinLoader active={true} />}
@@ -310,10 +379,128 @@ class SingleTicketContainer extends React.Component {
                     status={this.ticket.status._id}
                     socket={this.props.socket}
                     onStatusChange={(status) => {
+                      console.log('status in Parent', JSON.stringify(status));
                       this.ticket.status = status;
                     }}
+                    openModal={(id) => this.openModal(id)}
                     hasPerm={hasTicketStatusUpdate()}
                   />
+                </div>
+
+                <Button
+                  type={'button'}
+                  text={'Resolve'}
+                  small={true}
+                  flat={true}
+                  style={'danger'}
+                  onClick={this.openModal}
+                />
+                <div>
+                  <Modal
+                    isOpen={this.state.modalIsOpen}
+                    onRequestClose={this.closeModal}
+                    contentLabel="Example Modal"
+                    style={{
+                      overlay: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Background color of the overlay
+                      },
+                      content: {
+                        height: 'max-content',
+                        padding: '20px',
+                        width: '30%', // Set the desired width here, e.g., 50%
+                        margin: 'auto', // Center the modal horizontally
+                      },
+                    }}
+                  >
+                    <div>
+                      {/* <form onSubmit={(e) => this.onCommentSubmit(e, 'comment')}> */}
+                      <form className="nomargin" onSubmit={() => this.submitTheForm()}>
+                        {/* ... existing form elements ... */}
+                        {/* Additional fields for resolution form */}
+                        <div>
+                          <h2 className={'nomargin mb-5'}>Take Action</h2>
+                          <div style={{ width: '100%', padding: '10px 0' }}>
+                            <label htmlFor="resolution_action" className="uk-form-label">
+                              Resolution Action
+                            </label>
+
+                            <select
+                              id="resolution_action"
+                              name="resolution_action"
+                              value={this.state.resolution_action}
+                              onChange={(e) => this.setState({ ...this.state, resolution_action: e.target.value })}
+                            >
+                              <option value="NO-ACTION">No Action</option>
+                              <option value="CANCEL">Cancel</option>
+                              <option value="REPLACEMENT">Replace</option>
+                              <option value="REFUND">Refund</option>
+                              <option value="NO-ACTION">Cascade</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="uk-margin-medium-bottom" style={{ width: '100%', padding: '10px 0' }}>
+                          {/* <div className="uk-margin-medium-bottom" style={{ width: '100%' }}> */}
+                          {/* <Grid> */}
+                          <div>
+                            <label htmlFor="short_description" className="uk-form-label">
+                              Short Description
+                            </label>
+                            <input
+                              type="text"
+                              id="short_description"
+                              name="short_description"
+                              className={'md-input'}
+                              value={this.state.short_description}
+                              onChange={(e) => this.setState({ ...this.state, short_description: e.target.value })}
+                            />
+                          </div>
+                          <div style={{ width: '100%', padding: '10px 0' }}>
+                            <label htmlFor="long_description" className="uk-form-label">
+                              Long Description
+                            </label>
+                            <input
+                              type="text"
+                              id="long_description"
+                              name="long_description"
+                              className={'md-input'}
+                              value={this.state.long_description}
+                              onChange={(e) => this.setState({ ...this.state, long_description: e.target.value })}
+                            />
+                          </div>
+                          {/* </Grid> */}
+                          {this.state.resolution_action === 'REFUND' && (
+                            <div style={{ width: '100%', padding: '10px 0' }}>
+                              <label htmlFor="refund_amount">Refund Amount</label>
+                              <input
+                                type="text"
+                                id="refund_amount"
+                                name="refund_amount"
+                                className={'md-input'}
+                                value={this.state.refund_amount}
+                                onChange={(e) => this.setState({ ...this.state, refund_amount: e.target.value })}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="left" style={{ marginTop: 15 }}>
+                          <Button
+                            type={'button'}
+                            text={'Cancel'}
+                            small={true}
+                            flat={true}
+                            style={'danger'}
+                            onClick={this.closeModal}
+                          />
+                        </div>
+                        {/* ... existing form elements ... */}
+                        <div className="right" style={{ marginTop: 15 }}>
+                          <Button type={'submit'} text={'Submit'} style={'success'} small={true} waves={true} />
+                        </div>
+                      </form>
+                    </div>
+                  </Modal>
                 </div>
                 {/*  Left Side */}
                 <div className="page-content-left full-height scrollable">
