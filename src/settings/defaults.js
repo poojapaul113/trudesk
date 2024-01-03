@@ -1,3 +1,6 @@
+/* eslint-disable no-var */
+/* eslint-disable object-shorthand */
+/* eslint-disable no-unused-vars */
 /*
       .                              .o8                     oooo
    .o8                             "888                     `888
@@ -737,6 +740,7 @@ function addDefaultTeamAndAdmin(callback) {
   // const data = req.body
   const data = {
     // please make this body
+    
     mongo: {
       host: 'localhost',
       port: '27017',
@@ -893,7 +897,7 @@ function addDefaultTeamAndAdmin(callback) {
               isLocked: true,
             },
             {
-              name: 'Closed',
+              name: 'Resolved',
               htmlColor: '#CCCCCC',
               uid: 3,
               order: 3,

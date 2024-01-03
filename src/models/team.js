@@ -1,3 +1,4 @@
+/* eslint-disable no-var */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888
@@ -12,14 +13,14 @@
  *  Copyright (c) 2014-2019. All rights reserved.
  */
 
-var _ = require('lodash')
-var mongoose = require('mongoose')
-var utils = require('../helpers/utils')
+var _ = require('lodash');
+var mongoose = require('mongoose');
+var utils = require('../helpers/utils');
 
 // Refs
-require('./user')
+require('./user');
 
-var COLLECTION = 'teams'
+var COLLECTION = 'teams';
 
 var teamSchema = mongoose.Schema({
   name: { type: String, required: true, unique: true },
@@ -28,163 +29,164 @@ var teamSchema = mongoose.Schema({
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'accounts',
-      autopopulate: { select: '-hasL2Auth -preferences -__v' }
-    }
-  ]
-})
+      autopopulate: { select: '-hasL2Auth -preferences -__v' },
+    },
+  ],
+});
 
-teamSchema.plugin(require('mongoose-autopopulate'))
+teamSchema.plugin(require('mongoose-autopopulate'));
 
 teamSchema.pre('validate', function () {
-  this.normalized = utils.sanitizeFieldPlainText(this.name.trim().toLowerCase())
-})
+  this.normalized = utils.sanitizeFieldPlainText(this.name.trim().toLowerCase());
+});
 
 teamSchema.pre('save', function (next) {
-  this.name = utils.sanitizeFieldPlainText(this.name.trim())
+  this.name = utils.sanitizeFieldPlainText(this.name.trim());
 
-  return next()
-})
+  return next();
+});
 
 teamSchema.methods.addMember = async function (memberId, callback) {
+  const self = this;
   return new Promise((resolve, reject) => {
-    ;(async () => {
+    (async () => {
       if (_.isUndefined(memberId)) {
-        if (typeof callback === 'function') return callback({ message: 'Invalid MemberId - TeamSchema.AddMember()' })
-        return reject(new Error('Invalid MemberId - TeamSchema.AddMember()'))
+        if (typeof callback === 'function') return callback({ message: 'Invalid MemberId - $Team.AddMember()' });
+
+        return reject(new Error('Invalid MemberId - $Team.AddMember()'));
       }
 
-      if (this.members === null) this.members = []
+      if (self.members === null) self.members = [];
+      if (isMember(self.members, memberId)) {
+        if (typeof callback === 'function') return callback(null, false);
 
-      this.members.push(memberId)
-      this.members = _.uniq(this.members)
+        return resolve(false);
+      }
 
-      if (typeof callback === 'function') return callback(null, true)
+      self.members.push(memberId);
+      self.members = _.uniq(self.members);
 
-      return resolve(true)
-    })()
-  })
-}
+      if (typeof callback === 'function') return callback(null, true);
+
+      return resolve(true);
+    })();
+  });
+};
 
 teamSchema.methods.removeMember = function (memberId, callback) {
   return new Promise((resolve, reject) => {
-    ;(async () => {
+    (async () => {
       if (_.isUndefined(memberId)) {
-        if (typeof callback === 'function') return callback({ message: 'Invalid MemberId - TeamSchema.RemoveMember()' })
-        return reject(new Error('Invalid MemberId - TeamSchema.RemoveMember()'))
+        if (typeof callback === 'function')
+          return callback({ message: 'Invalid MemberId - TeamSchema.RemoveMember()' });
+        return reject(new Error('Invalid MemberId - TeamSchema.RemoveMember()'));
       }
 
       if (!isMember(this.members, memberId)) {
-        if(typeof callback === 'function') return callback(null, false)
-        return reject(false)
+        if (typeof callback === 'function') return callback(null, false);
+        // eslint-disable-next-line prefer-promise-reject-errors
+        return reject(false);
       }
-      this.members.splice(_.indexOf(this.members, _.find(this.members, { _id: memberId })), 1)
-      this.members = _.uniq(this.members)
+      this.members.splice(_.indexOf(this.members, _.find(this.members, { _id: memberId })), 1);
+      this.members = _.uniq(this.members);
 
-      if (typeof callback === 'function') return callback(null, true)
+      if (typeof callback === 'function') return callback(null, true);
 
-      return resolve(true)
-    })()
-  })
-}
+      return resolve(true);
+    })();
+  });
+};
 
 teamSchema.methods.isMember = function (memberId) {
-  return isMember(this.members, memberId)
-}
+  return isMember(this.members, memberId);
+};
 
 teamSchema.statics.getWithObject = function (obj, callback) {
-  if (!obj) return callback({ message: 'Invalid Team Object - TeamSchema.GetWithObject()' })
+  if (!obj) return callback({ message: 'Invalid Team Object - TeamSchema.GetWithObject()' });
 
   var q = this.model(COLLECTION)
     .find({})
     .skip(obj.limit * obj.page)
     .limit(obj.limit)
-    .sort('name')
+    .sort('name');
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
 teamSchema.statics.getTeamByName = function (name, callback) {
-  if (_.isUndefined(name) || name.length < 1) return callback('Invalid Team Name - TeamSchema.GetTeamByName()')
+  if (_.isUndefined(name) || name.length < 1) return callback('Invalid Team Name - TeamSchema.GetTeamByName()');
 
-  var q = this.model(COLLECTION).findOne({ normalized: name })
+  var q = this.model(COLLECTION).findOne({ normalized: name });
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
 teamSchema.statics.getTeams = function (callback) {
-  var q = this.model(COLLECTION)
-    .find({})
-    .sort('name')
+  var q = this.model(COLLECTION).find({}).sort('name');
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
 teamSchema.statics.getTeamsByIds = function (ids, callback) {
   return this.model(COLLECTION)
     .find({ _id: { $in: ids } })
     .sort('name')
-    .exec(callback)
-}
+    .exec(callback);
+};
 
 teamSchema.statics.getTeamsNoPopulate = function (callback) {
-  var q = this.model(COLLECTION)
-    .find({})
-    .sort('name')
+  var q = this.model(COLLECTION).find({}).sort('name');
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
 teamSchema.statics.getTeamsOfUser = function (userId, callback) {
   return new Promise((resolve, reject) => {
-    ;(async () => {
+    (async () => {
       if (_.isUndefined(userId)) {
-        if (typeof callback === 'function') callback('Invalid UserId - TeamSchema.GetTeamsOfUser()')
-        return reject(new Error('Invalid UserId - TeamSchema.GetTeamsOfUser()'))
+        if (typeof callback === 'function') callback('Invalid UserId - TeamSchema.GetTeamsOfUser()');
+        return reject(new Error('Invalid UserId - TeamSchema.GetTeamsOfUser()'));
       }
 
       try {
-        const q = this.model(COLLECTION)
-          .find({ members: userId })
-          .sort('name')
+        const q = this.model(COLLECTION).find({ members: userId }).sort('name');
 
-        if (typeof callback === 'function') return q.exec(callback)
+        if (typeof callback === 'function') return q.exec(callback);
 
-        const teams = await q.exec()
+        const teams = await q.exec();
 
-        return resolve(teams)
+        return resolve(teams);
       } catch (error) {
-        if (typeof callback === 'function') return callback(error)
+        if (typeof callback === 'function') return callback(error);
 
-        return reject(error)
+        return reject(error);
       }
-    })()
-  })
-}
+    })();
+  });
+};
 
 teamSchema.statics.getTeamsOfUserNoPopulate = function (userId, callback) {
-  if (_.isUndefined(userId)) return callback('Invalid UserId - TeamSchema.GetTeamsOfUserNoPopulate()')
+  if (_.isUndefined(userId)) return callback('Invalid UserId - TeamSchema.GetTeamsOfUserNoPopulate()');
 
-  var q = this.model(COLLECTION)
-    .find({ members: userId })
-    .sort('name')
+  var q = this.model(COLLECTION).find({ members: userId }).sort('name');
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
 teamSchema.statics.getTeam = function (id, callback) {
-  if (_.isUndefined(id)) return callback('Invalid TeamId - TeamSchema.GetTeam()')
+  if (_.isUndefined(id)) return callback('Invalid TeamId - TeamSchema.GetTeam()');
 
-  var q = this.model(COLLECTION).findOne({ _id: id })
+  var q = this.model(COLLECTION).findOne({ _id: id });
 
-  return q.exec(callback)
-}
+  return q.exec(callback);
+};
 
-function isMember (arr, id) {
+function isMember(arr, id) {
   var matches = _.filter(arr, function (value) {
-    if (value._id.toString() === id.toString()) return value
-  })
+    if (value._id.toString() === id.toString()) return value;
+  });
 
-  return matches.length > 0
+  return matches.length > 0;
 }
 
-module.exports = mongoose.model(COLLECTION, teamSchema)
+module.exports = mongoose.model(COLLECTION, teamSchema);

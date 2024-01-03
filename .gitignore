@@ -70,3 +70,5 @@ public/uploads/assets/upload/
 stats\.json
 
 *.heapsnapshot
+
+/data

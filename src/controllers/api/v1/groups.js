@@ -1,3 +1,5 @@
+/* eslint-disable object-shorthand */
+/* eslint-disable no-var */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888

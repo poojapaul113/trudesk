@@ -466,6 +466,7 @@ function randomDate (start, end) {
 
 debugController.sendmail = function (req, res) {
   const mailer = require('../mailer')
+  // eslint-disable-next-line no-unused-vars
   const templateSchema = require('../models/template')
   const Email = require('email-templates')
   const templateDir = path.resolve(__dirname, '..', 'mailer', 'templates')

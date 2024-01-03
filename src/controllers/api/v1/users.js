@@ -1,3 +1,6 @@
+/* eslint-disable object-shorthand */
+/* eslint-disable no-unused-vars */
+/* eslint-disable camelcase */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888
@@ -12,18 +15,18 @@
  *  Copyright (c) 2014-2019. All rights reserved.
  */
 
-const async = require('async')
-const _ = require('lodash')
-const winston = require('../../../logger')
-const permissions = require('../../../permissions')
-const emitter = require('../../../emitter')
-const UserSchema = require('../../../models/user')
-const groupSchema = require('../../../models/group')
-const notificationSchema = require('../../../models/notification')
-const SettingUtil = require('../../../settings/settingsUtil')
-const Chance = require('chance')
+const async = require('async');
+const _ = require('lodash');
+const winston = require('../../../logger');
+const permissions = require('../../../permissions');
+const emitter = require('../../../emitter');
+const UserSchema = require('../../../models/user');
+const groupSchema = require('../../../models/group');
+const notificationSchema = require('../../../models/notification');
+const SettingUtil = require('../../../settings/settingsUtil');
+const Chance = require('chance');
 
-const apiUsers = {}
+const apiUsers = {};
 
 /**
  * @api {get} /api/v1/users Gets users with query string
@@ -46,77 +49,77 @@ const apiUsers = {}
  }
  */
 apiUsers.getWithLimit = function (req, res) {
-  let limit = 10
+  let limit = 10;
   if (!_.isUndefined(req.query.limit)) {
-    limit = parseInt(req.query.limit)
+    limit = parseInt(req.query.limit);
   }
-  const page = parseInt(req.query.page)
-  const search = req.query.search
+  const page = parseInt(req.query.page);
+  const search = req.query.search;
 
   const obj = {
     limit: limit,
     page: page,
-    search: search
-  }
+    search: search,
+  };
 
   async.waterfall(
     [
       function (callback) {
         UserSchema.getUserWithObject(obj, function (err, results) {
-          callback(err, results)
-        })
+          callback(err, results);
+        });
       },
       function (users, callback) {
-        const result = []
+        const result = [];
 
         async.waterfall(
           [
             function (cc) {
               groupSchema.getAllGroups(function (err, grps) {
-                if (err) return cc(err)
-                return cc(null, grps)
-              })
+                if (err) return cc(err);
+                return cc(null, grps);
+              });
             },
             function (grps, cc) {
               async.eachSeries(
                 users,
                 function (u, c) {
-                  const user = u.toObject()
+                  const user = u.toObject();
 
                   const groups = _.filter(grps, function (g) {
                     return _.some(g.members, function (m) {
-                      return m._id.toString() === user._id.toString()
-                    })
-                  })
+                      return m._id.toString() === user._id.toString();
+                    });
+                  });
 
                   user.groups = _.map(groups, function (group) {
-                    return { name: group.name, _id: group._id }
-                  })
+                    return { name: group.name, _id: group._id };
+                  });
 
-                  result.push(stripUserFields(user))
-                  return c()
+                  result.push(stripUserFields(user));
+                  return c();
                 },
                 function (err) {
-                  if (err) return callback(err)
-                  return cc(null, result)
+                  if (err) return callback(err);
+                  return cc(null, result);
                 }
-              )
-            }
+              );
+            },
           ],
           function (err, results) {
-            if (err) return callback(err)
-            return callback(null, results)
+            if (err) return callback(err);
+            return callback(null, results);
           }
-        )
-      }
+        );
+      },
     ],
     function (err, rr) {
-      if (err) return res.status(400).json({ error: 'Error: ' + err.message })
+      if (err) return res.status(400).json({ error: 'Error: ' + err.message });
 
-      return res.json({ success: true, count: _.size(rr), users: rr })
+      return res.json({ success: true, count: _.size(rr), users: rr });
     }
-  )
-}
+  );
+};
 
 /**
  * @api {post} /api/v1/users/create Create Account
@@ -150,51 +153,51 @@ apiUsers.getWithLimit = function (req, res) {
  }
  */
 apiUsers.create = async function (req, res) {
-  const response = {}
-  response.success = true
+  const response = {};
+  response.success = true;
 
-  const postData = req.body
+  const postData = req.body;
 
   if (_.isUndefined(postData) || !_.isObject(postData)) {
-    return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
   }
 
-  const propCheck = ['aUsername', 'aPass', 'aPassConfirm', 'aFullname', 'aEmail', 'aRole']
+  const propCheck = ['aUsername', 'aPass', 'aPassConfirm', 'aFullname', 'aEmail', 'aRole'];
 
   if (
     !_.every(propCheck, function (x) {
-      return x in postData
+      return x in postData;
     })
   ) {
-    return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
   }
 
   if (_.isUndefined(postData.aGrps) || _.isNull(postData.aGrps) || !_.isArray(postData.aGrps)) {
-    return res.status(400).json({ success: false, error: 'Invalid Group Array' })
+    return res.status(400).json({ success: false, error: 'Invalid Group Array' });
   }
 
   if (postData.aPass !== postData.aPassConfirm)
-    return res.status(400).json({ success: false, error: 'Invalid Password Match' })
+    return res.status(400).json({ success: false, error: 'Invalid Password Match' });
 
   async.series(
     [
       function (next) {
         SettingUtil.getSettings(function (err, content) {
-          if (err) return next(err)
-          const settings = content.data.settings
+          if (err) return next(err);
+          const settings = content.data.settings;
           if (settings.accountsPasswordComplexity.value) {
-            const passwordComplexity = require('../../../settings/passwordComplexity')
+            const passwordComplexity = require('../../../settings/passwordComplexity');
             if (!passwordComplexity.validate(postData.aPass))
-              return next({ message: 'Password does not meet minimum requirements.' })
+              return next({ message: 'Password does not meet minimum requirements.' });
 
-            return next()
+            return next();
           }
 
-          return next()
-        })
+          return next();
+        });
       },
       function (next) {
-        const chance = new Chance()
+        const chance = new Chance();
 
         const account = new UserSchema({
           username: postData.aUsername,
@@ -202,66 +205,206 @@ apiUsers.create = async function (req, res) {
           fullname: postData.aFullname,
           email: postData.aEmail,
           accessToken: chance.hash(),
-          role: postData.aRole
-        })
+          role: postData.aRole,
+        });
 
         if (postData.aTitle) {
-          account.title = postData.aTitle
+          account.title = postData.aTitle;
         }
 
         account.save(function (err, a) {
-          if (err) return next(err)
+          if (err) return next(err);
 
           a.populate('role', function (err, populatedAccount) {
-            if (err) return next(err)
+            if (err) return next(err);
 
-            response.account = populatedAccount.toObject()
-            delete response.account.password
+            response.account = populatedAccount.toObject();
+            delete response.account.password;
 
-            const groups = []
+            const groups = [];
 
             async.each(
               postData.aGrps,
               function (id, done) {
-                if (_.isUndefined(id)) return done()
+                if (_.isUndefined(id)) return done();
                 groupSchema.getGroupById(id, function (err, grp) {
-                  if (err) return done(err)
-                  if (!grp) return done({ message: `Invalid Group (${id}) - Group not found. Check Group ID.` })
+                  if (err) return done(err);
+                  if (!grp) return done({ message: `Invalid Group (${id}) - Group not found. Check Group ID.` });
 
                   grp.addMember(a._id, function (err, success) {
-                    if (err) return done(err)
+                    if (err) return done(err);
 
                     grp.save(function (err) {
-                      if (err) return done(err)
-                      groups.push(grp)
-                      done(null, success)
-                    })
-                  })
-                })
+                      if (err) return done(err);
+                      groups.push(grp);
+                      done(null, success);
+                    });
+                  });
+                });
               },
               function (e) {
-                if (e) return next(e)
-                response.account.groups = groups
+                if (e) return next(e);
+                response.account.groups = groups;
 
-                return next()
+                return next();
               }
-            )
-          })
-        })
-      }
+            );
+          });
+        });
+      },
     ],
     function (e) {
       if (e) {
-        response.success = false
-        response.error = e
-        winston.debug(response)
-        return res.status(400).json(response)
+        response.success = false;
+        response.error = e;
+        winston.debug(response);
+        return res.status(400).json(response);
       }
 
-      return res.json(response)
+      return res.json(response);
     }
-  )
-}
+  );
+};
+
+apiUsers.adapterUserCreate = async function (req, res) {
+
+  var groupSchema = require('../../../models/group');
+  var roleSchmea = require('../../../models/role');
+  
+  const response = {};
+  response.success = true;
+
+  const postData = req.body;
+
+  const role_data = await roleSchmea.find({});
+
+  postData.aRole = role_data[2]._id;
+
+  if (_.isUndefined(postData) || !_.isObject(postData)) {
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
+  }
+
+  const propCheck = ['aUsername', 'aPass', 'aPassConfirm', 'aFullname', 'aEmail', 'aRole'];
+
+  if (
+    !_.every(propCheck, function (x) {
+      return x in postData;
+    })
+  ) {
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
+  }
+
+  // if (_.isUndefined(postData.aGrps) || _.isNull(postData.aGrps) || !_.isArray(postData.aGrps)) {
+  //   return res.status(400).json({ success: false, error: 'Invalid Group Array' });
+  // }
+
+  if (postData.aPass !== postData.aPassConfirm)
+    return res.status(400).json({ success: false, error: 'Invalid Password Match' });
+
+  async.series(
+    [
+      function (next) {
+        SettingUtil.getSettings(function (err, content) {
+          if (err) return next(err);
+          const settings = content.data.settings;
+          if (settings.accountsPasswordComplexity.value) {
+            const passwordComplexity = require('../../../settings/passwordComplexity');
+            if (!passwordComplexity.validate(postData.aPass))
+              return next({ message: 'Password does not meet minimum requirements.' });
+
+            return next();
+          }
+
+          return next();
+        });
+      },
+      function (next) {
+        const chance = new Chance();
+
+        const account = new UserSchema({
+          username: postData.aUsername,
+          password: postData.aPass,
+          fullname: postData.aFullname,
+          email: postData.aEmail,
+          accessToken: chance.hash(),
+          role: postData.aRole,
+        });
+
+        if (postData.aTitle) {
+          account.title = postData.aTitle;
+        }
+
+        account.save(function (err, a) {
+          if (err) return next(err);
+
+          a.populate('role',async function (err, populatedAccount) {
+            if (err) return next(err);
+
+            response.account = populatedAccount.toObject();
+            delete response.account.password;
+
+            const groups = [];
+
+            var Group = new groupSchema();
+
+            Group.name = `${postData.aUsername} Group`;
+            Group.members = [a._id];
+            Group.sendMailTo = [a._id];
+            // eslint-disable-next-line camelcase
+            let group_data
+          try {
+            group_data = await Group.save();
+          } catch (err) {
+            return res.status(400).json({ success: false, error: 'Error: ' + err.message });
+          }
+           
+
+            
+
+
+            async.each(
+              // eslint-disable-next-line camelcase
+              group_data._id,
+              function (id, done) {
+                if (_.isUndefined(id)) return done();
+                groupSchema.getGroupById(id, function (err, grp) {
+                  if (err) return done(err);
+                  if (!grp) return done({ message: `Invalid Group (${id}) - Group not found. Check Group ID.` });
+
+                  grp.addMember(a._id, function (err, success) {
+                    if (err) return done(err);
+
+                    grp.save(function (err) {
+                      if (err) return done(err);
+                      groups.push(grp);
+                      done(null, success);
+                    });
+                  });
+                });
+              },
+              function (e) {
+                if (e) return next(e);
+                response.account.groups = groups;
+
+                return next();
+              }
+            );
+          });
+        });
+      },
+    ],
+    function (e) {
+      if (e) {
+        response.success = false;
+        response.error = e;
+        winston.debug(response);
+        return res.status(400).json(response);
+      }
+
+      return res.json(response);
+    }
+  );
+};
 
 /**
  * @api {post} /api/v1/public/account/create Create Public Account
@@ -290,138 +433,138 @@ apiUsers.create = async function (req, res) {
  }
  */
 apiUsers.createPublicAccount = function (req, res) {
-  const SettingSchema = require('../../../models/setting')
+  const SettingSchema = require('../../../models/setting');
 
-  const response = {}
-  response.success = true
-  const postData = req.body
-  if (!_.isObject(postData)) return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+  const response = {};
+  response.success = true;
+  const postData = req.body;
+  if (!_.isObject(postData)) return res.status(400).json({ success: false, error: 'Invalid Post Data' });
 
-  let user, group
+  let user, group;
 
   async.waterfall(
     [
       function (next) {
         SettingSchema.getSetting('allowUserRegistration:enable', function (err, allowUserRegistration) {
-          if (err) return next(err)
+          if (err) return next(err);
           if (!allowUserRegistration) {
-            winston.warn('Public account creation was attempted while disabled!')
-            return next({ message: 'Public account creation is disabled.' })
+            winston.warn('Public account creation was attempted while disabled!');
+            return next({ message: 'Public account creation is disabled.' });
           }
 
-          return next()
-        })
+          return next();
+        });
       },
       function (next) {
         SettingSchema.getSetting('role:user:default', function (err, roleDefault) {
-          if (err) return next(err)
+          if (err) return next(err);
           if (!roleDefault) {
-            winston.error('No Default User Role Set. (Settings > Permissions > Default User Role)')
-            return next({ message: 'No Default Role Set. Please contact administrator.' })
+            winston.error('No Default User Role Set. (Settings > Permissions > Default User Role)');
+            return next({ message: 'No Default Role Set. Please contact administrator.' });
           }
 
-          return next(null, roleDefault)
-        })
+          return next(null, roleDefault);
+        });
       },
       function (roleDefault, next) {
         SettingSchema.getSetting('accountsPasswordComplexity:enable', function (err, passwordComplexitySetting) {
-          if (err) return next(err)
+          if (err) return next(err);
           if (!passwordComplexitySetting || passwordComplexitySetting.value === true) {
-            const passwordComplexity = require('../../../settings/passwordComplexity')
+            const passwordComplexity = require('../../../settings/passwordComplexity');
             if (!passwordComplexity.validate(postData.user.password))
-              return next({ message: 'Password does not minimum requirements.' })
+              return next({ message: 'Password does not minimum requirements.' });
 
-            return next(null, roleDefault)
+            return next(null, roleDefault);
           }
 
-          return next(null, roleDefault)
-        })
+          return next(null, roleDefault);
+        });
       },
       function (roleDefault, next) {
-        const UserSchema = require('../../../models/user')
+        const UserSchema = require('../../../models/user');
         user = new UserSchema({
           username: postData.user.email,
           password: postData.user.password,
           fullname: postData.user.fullname,
           email: postData.user.email,
-          role: roleDefault.value
-        })
+          role: roleDefault.value,
+        });
 
         user.save(function (err, savedUser) {
-          if (err) return next(err)
+          if (err) return next(err);
 
-          return next(null, savedUser)
-        })
+          return next(null, savedUser);
+        });
       },
       function (savedUser, next) {
-        const GroupSchema = require('../../../models/group')
+        const GroupSchema = require('../../../models/group');
         group = new GroupSchema({
           name: savedUser.email,
           members: [savedUser._id],
           sendMailTo: [savedUser._id],
-          public: true
-        })
+          public: true,
+        });
 
         group.save(function (err, savedGroup) {
-          if (err) return next(err)
+          if (err) return next(err);
 
-          return next(null, { user: savedUser, group: savedGroup })
-        })
-      }
+          return next(null, { user: savedUser, group: savedGroup });
+        });
+      },
     ],
     function (err, result) {
-      if (err) winston.debug(err)
-      if (err) return res.status(400).json({ success: false, error: err.message })
+      if (err) winston.debug(err);
+      if (err) return res.status(400).json({ success: false, error: err.message });
 
-      delete result.user.password
-      result.user.password = undefined
+      delete result.user.password;
+      result.user.password = undefined;
 
       return res.json({
         success: true,
-        userData: { user: result.user, group: result.group }
-      })
+        userData: { user: result.user, group: result.group },
+      });
     }
-  )
-}
+  );
+};
 
 apiUsers.profileUpdate = function (req, res) {
-  if (!req.user) return res.status(400).json({ success: false, error: 'Invalid Post Data' })
-  const username = req.user.username
+  if (!req.user) return res.status(400).json({ success: false, error: 'Invalid Post Data' });
+  const username = req.user.username;
   if (_.isNull(username) || _.isUndefined(username))
-    return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
 
-  const data = req.body
-  let passwordUpdated = false
+  const data = req.body;
+  let passwordUpdated = false;
 
   const obj = {
     fullname: data.aFullname,
     title: data.aTitle,
     password: data.aPassword,
     passconfirm: data.aPassConfirm,
-    email: data.aEmail
-  }
+    email: data.aEmail,
+  };
 
-  let passwordComplexityEnabled = true
+  let passwordComplexityEnabled = true;
 
   async.series(
     {
       settings: function (done) {
-        const SettingUtil = require('../../../settings/settingsUtil')
+        const SettingUtil = require('../../../settings/settingsUtil');
         SettingUtil.getSettings(function (err, content) {
-          if (err) return done(err)
+          if (err) return done(err);
 
-          const settings = content.data.settings
-          passwordComplexityEnabled = settings.accountsPasswordComplexity.value
+          const settings = content.data.settings;
+          passwordComplexityEnabled = settings.accountsPasswordComplexity.value;
 
-          return done()
-        })
+          return done();
+        });
       },
       user: function (done) {
         UserSchema.getUserByUsername(username, function (err, user) {
-          if (err) return done(err)
-          if (!user) return done('Invalid User Object')
+          if (err) return done(err);
+          if (!user) return done('Invalid User Object');
 
-          obj._id = user._id
+          obj._id = user._id;
 
           if (
             !_.isUndefined(obj.password) &&
@@ -432,55 +575,55 @@ apiUsers.profileUpdate = function (req, res) {
             if (obj.password === obj.passconfirm) {
               if (passwordComplexityEnabled) {
                 // check Password Complexity
-                const passwordComplexity = require('../../../settings/passwordComplexity')
-                if (!passwordComplexity.validate(obj.password)) return done('Password does not meet requirements')
+                const passwordComplexity = require('../../../settings/passwordComplexity');
+                if (!passwordComplexity.validate(obj.password)) return done('Password does not meet requirements');
               }
 
-              user.password = obj.password
-              passwordUpdated = true
+              user.password = obj.password;
+              passwordUpdated = true;
             }
           }
 
-          if (!_.isUndefined(obj.fullname) && obj.fullname.length > 0) user.fullname = obj.fullname
-          if (!_.isUndefined(obj.email) && obj.email.length > 0) user.email = obj.email
-          if (!_.isUndefined(obj.title) && obj.title.length > 0) user.title = obj.title
+          if (!_.isUndefined(obj.fullname) && obj.fullname.length > 0) user.fullname = obj.fullname;
+          if (!_.isUndefined(obj.email) && obj.email.length > 0) user.email = obj.email;
+          if (!_.isUndefined(obj.title) && obj.title.length > 0) user.title = obj.title;
 
           user.save(function (err, nUser) {
-            if (err) return done(err)
+            if (err) return done(err);
 
             nUser.populate('role', function (err, populatedUser) {
-              if (err) return done(err)
-              const resUser = stripUserFields(populatedUser)
+              if (err) return done(err);
+              const resUser = stripUserFields(populatedUser);
 
-              return done(null, resUser)
-            })
-          })
-        })
+              return done(null, resUser);
+            });
+          });
+        });
       },
       groups: function (done) {
-        groupSchema.getAllGroupsOfUser(obj._id, done)
-      }
+        groupSchema.getAllGroupsOfUser(obj._id, done);
+      },
     },
     async function (err, results) {
       if (err) {
-        winston.debug(err)
-        return res.status(400).json({ success: false, error: err })
+        winston.debug(err);
+        return res.status(400).json({ success: false, error: err });
       }
 
-      const user = results.user.toJSON()
+      const user = results.user.toJSON();
       user.groups = results.groups.map(function (g) {
-        return { _id: g._id, name: g.name }
-      })
+        return { _id: g._id, name: g.name };
+      });
 
       if (passwordUpdated) {
-        const Session = require('../../../models/session')
-        await Session.destroy(user._id)
+        const Session = require('../../../models/session');
+        await Session.destroy(user._id);
       }
 
-      return res.json({ success: true, user: user })
+      return res.json({ success: true, user: user });
     }
-  )
-}
+  );
+};
 
 /**
  * @api {put} /api/v1/users/:username Update User
@@ -512,14 +655,14 @@ apiUsers.profileUpdate = function (req, res) {
  }
  */
 apiUsers.update = function (req, res) {
-  const username = req.params.username
+  const username = req.params.username;
   if (_.isNull(username) || _.isUndefined(username))
-    return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
 
-  const data = req.body
+  const data = req.body;
   // saveGroups - Profile saving where groups are not sent
-  const saveGroups = !_.isUndefined(data.saveGroups) ? data.saveGroups : true
-  let passwordUpdated = false
+  const saveGroups = !_.isUndefined(data.saveGroups) ? data.saveGroups : true;
+  let passwordUpdated = false;
 
   const obj = {
     fullname: data.aFullname,
@@ -528,35 +671,35 @@ apiUsers.update = function (req, res) {
     passconfirm: data.aPassConfirm,
     email: data.aEmail,
     role: data.aRole,
-    groups: data.aGrps
-  }
+    groups: data.aGrps,
+  };
 
   if (_.isNull(obj.groups) || _.isUndefined(obj.groups)) {
-    obj.groups = []
+    obj.groups = [];
   } else if (!_.isArray(obj.groups)) {
-    obj.groups = [obj.groups]
+    obj.groups = [obj.groups];
   }
 
-  let passwordComplexityEnabled = true
+  let passwordComplexityEnabled = true;
 
   async.series(
     {
       settings: function (done) {
-        var SettingUtil = require('../../../settings/settingsUtil')
+        var SettingUtil = require('../../../settings/settingsUtil');
         SettingUtil.getSettings(function (err, content) {
-          if (err) return done(err)
-          var settings = content.data.settings
-          passwordComplexityEnabled = settings.accountsPasswordComplexity.value
+          if (err) return done(err);
+          var settings = content.data.settings;
+          passwordComplexityEnabled = settings.accountsPasswordComplexity.value;
 
-          return done()
-        })
+          return done();
+        });
       },
       user: function (done) {
         UserSchema.getUserByUsername(username, function (err, user) {
-          if (err) return done(err)
-          if (!user) return done('Invalid User Object')
+          if (err) return done(err);
+          if (!user) return done('Invalid User Object');
 
-          obj._id = user._id
+          obj._id = user._id;
 
           if (
             !_.isUndefined(obj.password) &&
@@ -567,106 +710,106 @@ apiUsers.update = function (req, res) {
             if (obj.password === obj.passconfirm) {
               if (passwordComplexityEnabled) {
                 // check Password Complexity
-                const passwordComplexity = require('../../../settings/passwordComplexity')
-                if (!passwordComplexity.validate(obj.password)) return done('Password does not meet requirements')
+                const passwordComplexity = require('../../../settings/passwordComplexity');
+                if (!passwordComplexity.validate(obj.password)) return done('Password does not meet requirements');
               }
 
-              user.password = obj.password
-              passwordUpdated = true
+              user.password = obj.password;
+              passwordUpdated = true;
             }
           }
 
-          if (!_.isUndefined(obj.fullname) && obj.fullname.length > 0) user.fullname = obj.fullname
-          if (!_.isUndefined(obj.email) && obj.email.length > 0) user.email = obj.email
-          if (!_.isUndefined(obj.title) && obj.title.length > 0) user.title = obj.title
-          if (!_.isUndefined(obj.role) && obj.role.length > 0) user.role = obj.role
+          if (!_.isUndefined(obj.fullname) && obj.fullname.length > 0) user.fullname = obj.fullname;
+          if (!_.isUndefined(obj.email) && obj.email.length > 0) user.email = obj.email;
+          if (!_.isUndefined(obj.title) && obj.title.length > 0) user.title = obj.title;
+          if (!_.isUndefined(obj.role) && obj.role.length > 0) user.role = obj.role;
 
           user.save(function (err, nUser) {
-            if (err) return done(err)
+            if (err) return done(err);
 
             nUser.populate('role', function (err, populatedUser) {
-              if (err) return done(err)
-              const resUser = stripUserFields(populatedUser)
+              if (err) return done(err);
+              const resUser = stripUserFields(populatedUser);
 
-              return done(null, resUser)
-            })
-          })
-        })
+              return done(null, resUser);
+            });
+          });
+        });
       },
       groups: function (done) {
         if (!saveGroups) {
-          groupSchema.getAllGroupsOfUser(obj._id, done)
+          groupSchema.getAllGroupsOfUser(obj._id, done);
         } else {
-          const userGroups = []
+          const userGroups = [];
           groupSchema.getAllGroups(function (err, groups) {
-            if (err) return done(err)
+            if (err) return done(err);
             async.each(
               groups,
               function (grp, callback) {
                 if (_.includes(obj.groups, grp._id.toString())) {
                   if (grp.isMember(obj._id)) {
-                    userGroups.push(grp)
-                    return callback()
+                    userGroups.push(grp);
+                    return callback();
                   }
                   grp.addMember(obj._id, function (err, result) {
-                    if (err) return callback(err)
+                    if (err) return callback(err);
 
                     if (result) {
                       grp.save(function (err) {
-                        if (err) return callback(err)
-                        userGroups.push(grp)
-                        return callback()
-                      })
+                        if (err) return callback(err);
+                        userGroups.push(grp);
+                        return callback();
+                      });
                     } else {
-                      return callback()
+                      return callback();
                     }
-                  })
+                  });
                 } else {
                   // Remove Member from group
                   grp.removeMember(obj._id, function (err, result) {
-                    if (err) return callback(err)
+                    if (err) return callback(err);
                     if (result) {
                       grp.save(function (err) {
-                        if (err) return callback(err)
+                        if (err) return callback(err);
 
-                        return callback()
-                      })
+                        return callback();
+                      });
                     } else {
-                      return callback()
+                      return callback();
                     }
-                  })
+                  });
                 }
               },
               function (err) {
-                if (err) return done(err)
+                if (err) return done(err);
 
-                return done(null, userGroups)
+                return done(null, userGroups);
               }
-            )
-          })
+            );
+          });
         }
-      }
+      },
     },
     async function (err, results) {
       if (err) {
-        winston.debug(err)
-        return res.status(400).json({ success: false, error: err })
+        winston.debug(err);
+        return res.status(400).json({ success: false, error: err });
       }
 
-      const user = results.user.toJSON()
+      const user = results.user.toJSON();
       user.groups = results.groups.map(function (g) {
-        return { _id: g._id, name: g.name }
-      })
+        return { _id: g._id, name: g.name };
+      });
 
       if (passwordUpdated) {
-        const Session = require('../../../models/session')
-        await Session.destroy(user._id)
+        const Session = require('../../../models/session');
+        await Session.destroy(user._id);
       }
 
-      return res.json({ success: true, user: user })
+      return res.json({ success: true, user: user });
     }
-  )
-}
+  );
+};
 
 /**
  * @api {put} /api/v1/users/:username/updatepreferences Updates User Preferences
@@ -694,39 +837,39 @@ apiUsers.update = function (req, res) {
  }
  */
 apiUsers.updatePreferences = function (req, res) {
-  const username = req.params.username
+  const username = req.params.username;
   if (typeof username === 'undefined') {
-    return res.status(400).json({ success: false, error: 'Invalid Request' })
+    return res.status(400).json({ success: false, error: 'Invalid Request' });
   }
 
-  const data = req.body
-  const preference = data.preference
-  const value = data.value
+  const data = req.body;
+  const preference = data.preference;
+  const value = data.value;
 
   UserSchema.getUserByUsername(username, function (err, user) {
     if (err) {
-      winston.warn('[API:USERS:UpdatePreferences] Error= ' + err)
-      return res.status(400).json({ success: false, error: err })
+      winston.warn('[API:USERS:UpdatePreferences] Error= ' + err);
+      return res.status(400).json({ success: false, error: err });
     }
 
     if (_.isNull(user.preferences)) {
-      user.preferences = {}
+      user.preferences = {};
     }
 
-    user.preferences[preference] = value
+    user.preferences[preference] = value;
 
     user.save(function (err, u) {
       if (err) {
-        winston.warn('[API:USERS:UpdatePreferences] Error= ' + err)
-        return res.status(400).json({ success: false, error: err })
+        winston.warn('[API:USERS:UpdatePreferences] Error= ' + err);
+        return res.status(400).json({ success: false, error: err });
       }
 
-      const resUser = stripUserFields(u)
+      const resUser = stripUserFields(u);
 
-      return res.json({ success: true, user: resUser })
-    })
-  })
-}
+      return res.json({ success: true, user: resUser });
+    });
+  });
+};
 
 /**
  * @api {delete} /api/v1/users/:username Delete / Disable User
@@ -749,25 +892,25 @@ apiUsers.updatePreferences = function (req, res) {
  }
  */
 apiUsers.deleteUser = function (req, res) {
-  const username = req.params.username
+  const username = req.params.username;
 
-  if (_.isUndefined(username) || _.isNull(username)) return res.status(400).json({ error: 'Invalid Request' })
+  if (_.isUndefined(username) || _.isNull(username)) return res.status(400).json({ error: 'Invalid Request' });
 
   async.waterfall(
     [
       function (cb) {
         UserSchema.getUserByUsername(username, function (err, user) {
-          if (err) return cb(err)
+          if (err) return cb(err);
 
           if (_.isNull(user)) {
-            return cb({ message: 'Invalid User' })
+            return cb({ message: 'Invalid User' });
           }
 
           if (user.username.toLowerCase() === req.user.username) {
-            return cb({ message: 'Cannot remove yourself!' })
+            return cb({ message: 'Cannot remove yourself!' });
           }
 
-          if (!permissions.canThis(req.user.role, 'accounts:delete')) return cb({ message: 'Access Denied' })
+          if (!permissions.canThis(req.user.role, 'accounts:delete')) return cb({ message: 'Access Denied' });
 
           // TODO: FIX THIS FOR HIERARCHY!!
           // if (req.user.role.toLowerCase() === 'support' || req.user.role.toLowerCase() === 'user') {
@@ -776,61 +919,61 @@ apiUsers.deleteUser = function (req, res) {
           //
           // }
 
-          return cb(null, user)
-        })
+          return cb(null, user);
+        });
       },
       function (user, cb) {
-        const ticketSchema = require('../../../models/ticket')
+        const ticketSchema = require('../../../models/ticket');
         ticketSchema.find({ owner: user._id }, function (err, tickets) {
-          if (err) return cb(err)
+          if (err) return cb(err);
 
-          const hasTickets = _.size(tickets) > 0
-          return cb(null, hasTickets, user)
-        })
+          const hasTickets = _.size(tickets) > 0;
+          return cb(null, hasTickets, user);
+        });
       },
       function (hasTickets, user, cb) {
-        const conversationSchema = require('../../../models/chat/conversation')
+        const conversationSchema = require('../../../models/chat/conversation');
         conversationSchema.getConversationsWithLimit(user._id, 10, function (err, conversations) {
-          if (err) return cb(err)
+          if (err) return cb(err);
 
-          const hasConversations = _.size(conversations) > 0
-          return cb(null, hasTickets, hasConversations, user)
-        })
+          const hasConversations = _.size(conversations) > 0;
+          return cb(null, hasTickets, hasConversations, user);
+        });
       },
       function (hasTickets, hasConversations, user, cb) {
-        const ticketSchema = require('../../../models/ticket')
+        const ticketSchema = require('../../../models/ticket');
         ticketSchema.find({ assignee: user._id }, function (err, tickets) {
-          if (err) return cb(err)
+          if (err) return cb(err);
 
-          const isAssignee = _.size(tickets) > 0
-          return cb(null, hasTickets, hasConversations, isAssignee, user)
-        })
+          const isAssignee = _.size(tickets) > 0;
+          return cb(null, hasTickets, hasConversations, isAssignee, user);
+        });
       },
       function (hasTickets, hasConversations, isAssignee, user, cb) {
         if (hasTickets || hasConversations || isAssignee) {
           // Disable if the user has tickets or conversations
           user.softDelete(function (err) {
-            if (err) return cb(err)
+            if (err) return cb(err);
 
             // Force logout if Logged in
-            return cb(null, true)
-          })
+            return cb(null, true);
+          });
         } else {
           user.remove(function (err) {
-            if (err) return cb(err)
+            if (err) return cb(err);
 
-            return cb(null, false)
-          })
+            return cb(null, false);
+          });
         }
-      }
+      },
     ],
     function (err, disabled) {
-      if (err) return res.status(400).json({ success: false, error: err.message })
+      if (err) return res.status(400).json({ success: false, error: err.message });
 
-      return res.json({ success: true, disabled: disabled })
+      return res.json({ success: true, disabled: disabled });
     }
-  )
-}
+  );
+};
 
 /**
  * @api {get} /api/v1/users/:username/enable Enable User
@@ -853,29 +996,29 @@ apiUsers.deleteUser = function (req, res) {
  }
  */
 apiUsers.enableUser = function (req, res) {
-  const username = req.params.username
-  if (_.isUndefined(username)) return res.status(400).json({ error: 'Invalid Request' })
+  const username = req.params.username;
+  if (_.isUndefined(username)) return res.status(400).json({ error: 'Invalid Request' });
 
   UserSchema.getUserByUsername(username, function (err, user) {
     if (err) {
-      winston.debug(err)
-      return res.status(400).json({ error: err.message })
+      winston.debug(err);
+      return res.status(400).json({ error: err.message });
     }
 
-    if (_.isUndefined(user) || _.isNull(user)) return res.status(400).json({ error: 'Invalid Request' })
+    if (_.isUndefined(user) || _.isNull(user)) return res.status(400).json({ error: 'Invalid Request' });
 
     if (!permissions.canThis(req.user.role, 'accounts:delete'))
-      return res.status(401).json({ error: 'Invalid Permissions' })
+      return res.status(401).json({ error: 'Invalid Permissions' });
 
-    user.deleted = false
+    user.deleted = false;
 
     user.save(function (err) {
-      if (err) return res.status(400).json({ error: err.message })
+      if (err) return res.status(400).json({ error: err.message });
 
-      res.json({ success: true })
-    })
-  })
-}
+      res.json({ success: true });
+    });
+  });
+};
 
 /**
  * @api {get} /api/v1/users/:username Get User
@@ -905,47 +1048,47 @@ apiUsers.enableUser = function (req, res) {
  }
  */
 apiUsers.single = function (req, res) {
-  const username = req.params.username
-  if (_.isUndefined(username)) return res.status(400).json({ error: 'Invalid Request.' })
+  const username = req.params.username;
+  if (_.isUndefined(username)) return res.status(400).json({ error: 'Invalid Request.' });
 
   const response = {
     success: true,
-    groups: []
-  }
+    groups: [],
+  };
 
   async.waterfall(
     [
       function (done) {
         UserSchema.getUserByUsername(username, function (err, user) {
-          if (err) return done(err)
+          if (err) return done(err);
 
-          if (_.isUndefined(user) || _.isNull(user)) return done('Invalid Request')
+          if (_.isUndefined(user) || _.isNull(user)) return done('Invalid Request');
 
-          user = stripUserFields(user)
-          response.user = user
+          user = stripUserFields(user);
+          response.user = user;
 
-          done(null, user)
-        })
+          done(null, user);
+        });
       },
       function (user, done) {
         groupSchema.getAllGroupsOfUserNoPopulate(user._id, function (err, grps) {
-          if (err) return done(err)
+          if (err) return done(err);
 
           response.groups = _.map(grps, function (o) {
-            return o._id
-          })
+            return o._id;
+          });
 
-          done(null, response.groups)
-        })
-      }
+          done(null, response.groups);
+        });
+      },
     ],
     function (err) {
-      if (err) return res.status(400).json({ error: err })
+      if (err) return res.status(400).json({ error: err });
 
-      res.json(response)
+      res.json(response);
     }
-  )
-}
+  );
+};
 
 /**
  * @api {get} /api/v1/users/notificationCount Get Notification Count
@@ -968,19 +1111,19 @@ apiUsers.single = function (req, res) {
  */
 apiUsers.notificationCount = function (req, res) {
   notificationSchema.getUnreadCount(req.user._id, function (err, count) {
-    if (err) return res.status(400).json({ success: false, error: err.message })
+    if (err) return res.status(400).json({ success: false, error: err.message });
 
-    return res.json({ success: true, count: count.toString() })
-  })
-}
+    return res.json({ success: true, count: count.toString() });
+  });
+};
 
 apiUsers.getNotifications = function (req, res) {
   notificationSchema.findAllForUser(req.user._id, function (err, notifications) {
-    if (err) return res.status(500).json({ success: false, error: err.message })
+    if (err) return res.status(500).json({ success: false, error: err.message });
 
-    return res.json({ success: true, notifications: notifications })
-  })
-}
+    return res.json({ success: true, notifications: notifications });
+  });
+};
 
 /**
  * @api {post} /api/v1/users/:id/generateapikey Generate API Key
@@ -1002,23 +1145,23 @@ apiUsers.getNotifications = function (req, res) {
  }
  */
 apiUsers.generateApiKey = function (req, res) {
-  const id = req.params.id
-  if (_.isUndefined(id) || _.isNull(id)) return res.status(400).json({ error: 'Invalid Request' })
+  const id = req.params.id;
+  if (_.isUndefined(id) || _.isNull(id)) return res.status(400).json({ error: 'Invalid Request' });
   if (!req.user.role.isAdmin && req.user._id.toString() !== id)
-    return res.status(401).json({ success: false, error: 'Unauthorized' })
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
 
   UserSchema.getUser(id, function (err, user) {
-    if (err || !user) return res.status(400).json({ success: false, error: 'Invalid Request' })
+    if (err || !user) return res.status(400).json({ success: false, error: 'Invalid Request' });
 
     // if (user.accessToken) return res.status(400).json({ success: false, error: 'User already has generated token' })
 
     user.addAccessToken(function (err, token) {
-      if (err) return res.status(400).json({ error: 'Invalid Request' })
+      if (err) return res.status(400).json({ error: 'Invalid Request' });
 
-      res.json({ token: token })
-    })
-  })
-}
+      res.json({ token: token });
+    });
+  });
+};
 
 /**
  * @api {post} /api/v1/users/:id/removeapikey Removes API Key
@@ -1040,21 +1183,21 @@ apiUsers.generateApiKey = function (req, res) {
  }
  */
 apiUsers.removeApiKey = function (req, res) {
-  const id = req.params.id
-  if (_.isUndefined(id) || _.isNull(id)) return res.status(400).json({ error: 'Invalid Request' })
+  const id = req.params.id;
+  if (_.isUndefined(id) || _.isNull(id)) return res.status(400).json({ error: 'Invalid Request' });
 
-  if (!req.user.isAdmin && req.user._id.toString() !== id) return res.status(401).json({ success: 'Unauthorized' })
+  if (!req.user.isAdmin && req.user._id.toString() !== id) return res.status(401).json({ success: 'Unauthorized' });
 
   UserSchema.getUser(id, function (err, user) {
-    if (err) return res.status(400).json({ error: 'Invalid Request', fullError: err })
+    if (err) return res.status(400).json({ error: 'Invalid Request', fullError: err });
 
     user.removeAccessToken(function (err) {
-      if (err) return res.status(400).json({ error: 'Invalid Request', fullError: err })
+      if (err) return res.status(400).json({ error: 'Invalid Request', fullError: err });
 
-      return res.json({ success: true })
-    })
-  })
-}
+      return res.json({ success: true });
+    });
+  });
+};
 
 /**
  * @api {post} /api/v1/users/:id/generatel2auth Generate Layer Two Auth
@@ -1076,22 +1219,22 @@ apiUsers.removeApiKey = function (req, res) {
  }
  */
 apiUsers.generateL2Auth = function (req, res) {
-  const id = req.params.id
+  const id = req.params.id;
   if (id.toString() !== req.user._id.toString()) {
-    return res.status(400).json({ success: false, error: 'Invalid Account Owner!' })
+    return res.status(400).json({ success: false, error: 'Invalid Account Owner!' });
   }
 
   UserSchema.getUser(id, function (err, user) {
-    if (err) return res.status(400).json({ success: false, error: 'Invalid Request' })
+    if (err) return res.status(400).json({ success: false, error: 'Invalid Request' });
 
     user.generateL2Auth(function (err, generatedKey) {
-      if (err) return res.status(400).json({ success: false, error: 'Invalid Request' })
+      if (err) return res.status(400).json({ success: false, error: 'Invalid Request' });
 
-      req.session.l2auth = 'totp'
-      return res.json({ success: true, generatedKey: generatedKey })
-    })
-  })
-}
+      req.session.l2auth = 'totp';
+      return res.json({ success: true, generatedKey: generatedKey });
+    });
+  });
+};
 
 /**
  * @api {post} /api/v1/users/:id/removel2auth Removes Layer Two Auth
@@ -1113,22 +1256,22 @@ apiUsers.generateL2Auth = function (req, res) {
  }
  */
 apiUsers.removeL2Auth = function (req, res) {
-  const id = req.params.id
+  const id = req.params.id;
   if (id.toString() !== req.user._id.toString()) {
-    return res.status(400).json({ success: false, error: 'Invalid Account Owner!' })
+    return res.status(400).json({ success: false, error: 'Invalid Account Owner!' });
   }
 
   UserSchema.getUser(id, function (err, user) {
-    if (err) return res.status(400).json({ success: false, error: 'Invalid Request' })
+    if (err) return res.status(400).json({ success: false, error: 'Invalid Request' });
 
     user.removeL2Auth(function (err) {
-      if (err) return res.status(400).json({ success: false, error: 'Invalid Request' })
+      if (err) return res.status(400).json({ success: false, error: 'Invalid Request' });
 
-      req.session.l2auth = null
-      return res.json({ success: true })
-    })
-  })
-}
+      req.session.l2auth = null;
+      return res.json({ success: true });
+    });
+  });
+};
 
 /**
  * @api {post} /api/v1/users/checkemail
@@ -1152,22 +1295,22 @@ apiUsers.removeL2Auth = function (req, res) {
  */
 
 apiUsers.checkEmail = function (req, res) {
-  const email = req.body.email
+  const email = req.body.email;
 
   if (_.isUndefined(email) || _.isNull(email)) {
-    return res.status(400).json({ success: false, error: 'Invalid Post Data' })
+    return res.status(400).json({ success: false, error: 'Invalid Post Data' });
   }
 
   UserSchema.getUserByEmail(email, function (err, users) {
-    if (err) return res.status(400).json({ success: false, error: err.message })
+    if (err) return res.status(400).json({ success: false, error: err.message });
 
     if (!_.isNull(users)) {
-      return res.json({ success: true, exist: true })
+      return res.json({ success: true, exist: true });
     }
 
-    return res.json({ success: true, exist: false })
-  })
-}
+    return res.json({ success: true, exist: false });
+  });
+};
 
 /**
  * @api {get} /api/v1/users/getassignees Get Assignees
@@ -1191,61 +1334,61 @@ apiUsers.checkEmail = function (req, res) {
  */
 apiUsers.getAssingees = function (req, res) {
   UserSchema.getAssigneeUsers(function (err, users) {
-    if (err) return res.status(400).json({ error: 'Invalid Request' })
+    if (err) return res.status(400).json({ error: 'Invalid Request' });
 
-    const strippedUsers = []
+    const strippedUsers = [];
 
     async.each(
       users,
       function (user, cb) {
-        user = stripUserFields(user)
-        strippedUsers.push(user)
+        user = stripUserFields(user);
+        strippedUsers.push(user);
 
-        cb()
+        cb();
       },
       function () {
-        return res.json({ success: true, users: strippedUsers })
+        return res.json({ success: true, users: strippedUsers });
       }
-    )
-  })
-}
+    );
+  });
+};
 
 apiUsers.getGroups = function (req, res) {
   if (req.user.role.isAdmin || req.user.role.isAgent) {
-    const departmentSchema = require('../../../models/department')
+    const departmentSchema = require('../../../models/department');
     departmentSchema.getDepartmentGroupsOfUser(req.user._id, function (err, groups) {
-      if (err) return res.status(400).json({ success: false, error: err.message })
+      if (err) return res.status(400).json({ success: false, error: err.message });
 
       const mappedGroups = groups.map(function (g) {
-        return g._id
-      })
+        return g._id;
+      });
 
-      return res.json({ success: true, groups: mappedGroups })
-    })
+      return res.json({ success: true, groups: mappedGroups });
+    });
   } else {
     if (req.user.username !== req.params.username)
-      return res.status(400).json({ success: false, error: 'Invalid API Call' })
+      return res.status(400).json({ success: false, error: 'Invalid API Call' });
 
     groupSchema.getAllGroupsOfUserNoPopulate(req.user._id, function (err, groups) {
-      if (err) return res.status(400).json({ success: false, error: err.message })
+      if (err) return res.status(400).json({ success: false, error: err.message });
 
       const mappedGroups = groups.map(function (g) {
-        return g._id
-      })
+        return g._id;
+      });
 
-      return res.json({ success: true, groups: mappedGroups })
-    })
+      return res.json({ success: true, groups: mappedGroups });
+    });
   }
+};
+
+function stripUserFields(user) {
+  user.password = undefined;
+  user.accessToken = undefined;
+  user.__v = undefined;
+  user.tOTPKey = undefined;
+  user.iOSDeviceTokens = undefined;
+
+  return user;
 }
 
-function stripUserFields (user) {
-  user.password = undefined
-  user.accessToken = undefined
-  user.__v = undefined
-  user.tOTPKey = undefined
-  user.iOSDeviceTokens = undefined
-
-  return user
-}
-
-module.exports = apiUsers
+module.exports = apiUsers;

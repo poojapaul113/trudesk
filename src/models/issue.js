@@ -1,6 +1,6 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const COLLECTION = 'issues'
+const COLLECTION = 'issues';
 
 const personSchema = new mongoose.Schema(
   {
@@ -11,7 +11,7 @@ const personSchema = new mongoose.Schema(
 
 const contactSchema = new mongoose.Schema(
   {
-    phone: Number,
+    phone: String,
   },
   { _id: false }
 );
@@ -29,10 +29,11 @@ const IssueSchema = new mongoose.Schema(
     userId: { type: String },
     transaction_id: { type: String },
     message_id: { type: String },
+    adapter_base_url: { type: String },
     category: { type: String },
     sub_category: { type: String },
-    bppId: String,
-    bpp_uri: String,
+    bppId: { type: String },
+    bpp_uri: { type: String },
     complainant_info: { type: complaintInfoSchema },
     order_details: { type: Object },
     description: { type: Object },
@@ -43,9 +44,9 @@ const IssueSchema = new mongoose.Schema(
     created_at: { type: String },
     updated_at: { type: String },
     issueId: { type: String },
-    issue_status: { type: String, default: "Open" },
+    issue_status: { type: String, default: 'Open' },
   },
   { _id: true, timestamps: false }
 );
 
-module.exports = mongoose.model(COLLECTION, IssueSchema)
+module.exports = mongoose.model(COLLECTION, IssueSchema);

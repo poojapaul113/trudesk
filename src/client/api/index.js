@@ -55,6 +55,7 @@ api.tickets.getWithPage = payload => {
   return axios.get(`/api/v2/tickets?type=${type}&page=${page}&limit=${limit}${fullFilter}`).then(res => {
     return res.data
   })
+  
 }
 api.tickets.search = payload => {
   return axios.get(`/api/v1/tickets/search/?search=${payload.searchString}&limit=100`).then(res => {
