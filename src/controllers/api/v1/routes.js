@@ -331,23 +331,23 @@ module.exports = function (middleware, router, controllers) {
 
   // Issues
   router.post('/api/v1/issue/save', apiv1, apiCtrl.issues.create);
-  router.get('/api/v1/issue/:transaction_id', async (req, res) => {
+  router.get('/api/v1/issue/:transaction_id', apiv1, async (req, res) => {
     try {
       var issueModel = require('../../../models/issue');
-      var UserSchema = require('../../../models/user');
+      // var UserSchema = require('../../../models/user');
 
-      const auth_header = req.headers.accesstoken;
-      const user = await UserSchema.findOne({ accessToken: auth_header });
+      // const auth_header = req.headers.accesstoken;
+      // const user = await UserSchema.findOne({ accessToken: auth_header });
 
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'UnAuthorised',
-        });
-      }
+      // if (!user) {
+      //   return res.status(401).json({
+      //     success: false,
+      //     error: 'UnAuthorised',
+      //   });
+      // }
       const issue = await issueModel.findOne({
         transaction_id: req.params.transaction_id,
-        userId: user._id,
+        // userId: user._id,
       });
 
       if (!issue) {
@@ -369,26 +369,28 @@ module.exports = function (middleware, router, controllers) {
     }
   });
 
-  router.patch('/api/v1/issue/:transaction_id', async (req, res) => {
+  router.patch('/api/v1/issue/:transaction_id', apiv1, async (req, res) => {
     try {
       var issueModel = require('../../../models/issue');
-      var UserSchema = require('../../../models/user');
+      // var UserSchema = require('../../../models/user');
 
-      const auth_header = req.headers.accesstoken;
-      const user = await UserSchema.findOne({ accessToken: auth_header });
+      // const auth_header = req.headers.accesstoken;
+      // const user = await UserSchema.findOne({ accessToken: auth_header });
 
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'UnAuthorised',
-        });
-      }
-      const issue = await issueModel.updateOne({
-        transaction_id: req.params.transaction_id,
-      }, 
-      {
-        issue_status: req.query.status
-      });
+      // if (!user) {
+      //   return res.status(401).json({
+      //     success: false,
+      //     error: 'UnAuthorised',
+      //   });
+      // }
+      const issue = await issueModel.updateOne(
+        {
+          transaction_id: req.params.transaction_id,
+        },
+        {
+          issue_status: req.query.status,
+        }
+      );
 
       return res.status(200).json({
         success: true,

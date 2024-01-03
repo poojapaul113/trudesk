@@ -116,7 +116,7 @@ class SingleTicketContainer extends React.Component {
       statusId: '',
       issue: {},
       resolution_action: '',
-      refund_amount: ''
+      refund_amount: '',
     };
 
     this.openModal = this.openModal.bind(this);
@@ -124,10 +124,11 @@ class SingleTicketContainer extends React.Component {
   }
 
   async getIssue() {
-    const issue = await axios
-    .get(`/api/v1/issue/${this.ticket.transaction_id}`)
+    const issue = await axios.get(`/api/v1/issue/${this.ticket.transaction_id}`);
 
-    this.setState({ ...this.state, issue });
+    console.log('issue', JSON.stringify(issue?.data?.issue));
+
+    this.setState({ ...this.state, issue: issue?.data?.issue });
   }
 
   openModal = (id) => {
@@ -274,37 +275,31 @@ class SingleTicketContainer extends React.Component {
       '🚀 ~ file: SingleTicketContainer.jsx:284 ~ SingleTicketContainer ~ .then ~ this.state.statusId:',
       this.state.statusId
     );
+    console.log(
+      '🚀 ~ file: SingleTicketContainer.jsx:289 ~ SingleTicketContainer ~ submitTheForm ~ this.ticket.transaction_id:',
+      this.ticket.transaction_id
+    );
 
     Promise.all([
-      axios
-      .post('/api/v1/tickets/addcomment', {
+      axios.post('/api/v1/tickets/addcomment', {
         _id: this.ticket._id,
         comment: this.state.long_description,
         ticketid: false,
         note: false,
       }),
-      axios
-      .put(`/api/v1/tickets/${this.ticket._id}`, {
+      axios.put(`/api/v1/tickets/${this.ticket._id}`, {
         status: this.state.statusId,
       }),
-      axios
-      .patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
-    ])
-    
-    // axios
-    //   .post('/api/v1/tickets/addcomment', {
-    //     _id: this.ticket._id,
-    //     comment: this.state.long_description,
-    //     ticketid: false,
-    //     note: false,
-    //   })
-    //   .then((value) => {
-    //     axios
-    //       .put(`/api/v1/tickets/${this.ticket._id}`, {
-    //         status: this.state.statusId,
-    //       })
-    //       .then((res) => console.log('response--------', res));
-    //   });
+      axios.patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
+      fetch(this.state.issue?.adapter_base_url, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(this.state),
+      }),
+    ]);
   }
 
   onSubscriberChanged(e) {
@@ -402,6 +397,7 @@ class SingleTicketContainer extends React.Component {
                     contentLabel="Example Modal"
                     style={{
                       overlay: {
+                        zIndex: '99',
                         backgroundColor: 'rgba(0, 0, 0, 0.5)', // Background color of the overlay
                       },
                       content: {
@@ -979,7 +975,7 @@ class SingleTicketContainer extends React.Component {
                     )}
 
                     {/* Comment / Notes Form */}
-                    {this.ticket.status.isResolved === false &&
+                    {/* {this.ticket.status.isResolved === false &&
                       (helpers.canUser('comments:create', true) || helpers.canUser('tickets:notes', true)) && (
                         <div className="uk-width-1-1 ticket-reply uk-clearfix">
                           <Avatar image={this.props.shared.sessionUser.image} showOnlineBubble={false} />
@@ -1048,7 +1044,7 @@ class SingleTicketContainer extends React.Component {
                             </TruTabSection>
                           </TruTabWrapper>
                         </div>
-                      )}
+                      )} */}
                   </div>
                 </div>
               </div>
