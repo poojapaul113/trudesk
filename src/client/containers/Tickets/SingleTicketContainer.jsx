@@ -44,7 +44,6 @@ import AssigneeDropdownPartial from 'containers/Tickets/AssigneeDropdownPartial'
 import Avatar from 'components/Avatar/Avatar';
 import CommentNotePartial from 'containers/Tickets/CommentNotePartial';
 import DatePicker from 'components/DatePicker';
-import EasyMDE from 'components/EasyMDE';
 import IssuePartial from 'containers/Tickets/IssuePartial';
 import OffCanvasEditor from 'components/OffCanvasEditor';
 import PDropdownTrigger from 'components/PDropdown/PDropdownTrigger';

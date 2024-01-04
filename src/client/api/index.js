@@ -1,3 +1,4 @@
+/* eslint-disable no-unneeded-ternary */
 /*
  *       .                             .o8                     oooo
  *    .o8                             "888                     `888

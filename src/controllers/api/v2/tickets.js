@@ -52,10 +52,12 @@ ticketsV2.get = async (req, res) => {
     let groups = [];
     // groups = await Models.Group.getAllGroupsOfUser(req.user._id);
     if (req.user.role.isAdmin || req.user.role.isAgent) {
-      const dbGroups = await Models.Department.getDepartmentGroupsOfUser(req.user._id);
-      groups = dbGroups.map((g) => g._id);
+      // const dbGroups = await Models.Department.getDepartmentGroupsOfUser(req.user._id);
+      // groups = dbGroups.map((g) => g._id);
+      groups = await Models.Group.find();
     } else {
       groups = await Models.Group.getAllGroupsOfUser(req.user._id);
+      queryObject.owner = req.user._id;
     }
 
     const mappedGroups = groups.map((g) => g._id);
@@ -97,7 +99,7 @@ ticketsV2.get = async (req, res) => {
     }
 
     // if (!permissions.canThis(req.user.role, 'tickets:viewall', false))
-    queryObject.owner = req.user._id;
+    
 
     const tickets = await Models.Ticket.getTicketsWithObject(mappedGroups, queryObject);
     const totalCount = await Models.Ticket.getCountWithObject(mappedGroups, queryObject);

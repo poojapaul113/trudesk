@@ -17,6 +17,7 @@
 
 var async = require('async');
 var _ = require('lodash');
+var { v4: uuidv4 } = require('uuid');
 var moment = require('moment-timezone');
 var winston = require('../../../logger');
 var permissions = require('../../../permissions');
@@ -404,6 +405,10 @@ apiTickets.create = function (req, res) {
   response.success = true;
 
   var postData = req.body;
+
+  if (!postData.transaction_id) {
+    postData.transaction_id = uuidv4();
+  }
   if (!_.isObject(postData) || !postData.subject || !postData.issue)
     return res.status(400).json({ success: false, error: 'Invalid Post Data' });
 
