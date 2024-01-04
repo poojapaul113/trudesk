@@ -114,7 +114,7 @@ class SingleTicketContainer extends React.Component {
       short_description: '',
       statusId: '',
       issue: {},
-      resolution_action: '',
+      resolution_action: 'NO-ACTION',
       refund_amount: '',
     };
 
@@ -279,17 +279,7 @@ class SingleTicketContainer extends React.Component {
       this.ticket.transaction_id
     );
 
-    Promise.all([
-      axios.post('/api/v1/tickets/addcomment', {
-        _id: this.ticket._id,
-        comment: this.state.long_description,
-        ticketid: false,
-        note: false,
-      }),
-      axios.put(`/api/v1/tickets/${this.ticket._id}`, {
-        status: this.state.statusId,
-      }),
-      axios.patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
+    return new Promise((resolve, reject) => {
       fetch(this.state.issue?.adapter_base_url, {
         method: 'POST',
         headers: {
@@ -297,8 +287,60 @@ class SingleTicketContainer extends React.Component {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(this.state),
-      }),
-    ]);
+      })
+        .then(async (response) => {
+          if (response.status === 200) {
+            const successData = await response.json();
+            console.log("---successData", JSON.stringify(successData));
+            Promise.all([
+              axios.post('/api/v1/tickets/addcomment', {
+                _id: this.ticket._id,
+                comment: this.state.long_description,
+                ticketid: false,
+                note: false,
+              }),
+              axios.put(`/api/v1/tickets/${this.ticket._id}`, {
+                status: this.state.statusId,
+              }),
+              axios.patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
+            ])
+          } else {
+            const errorData = await response.json();
+            console.log("---errorData", JSON.stringify(errorData));
+            resolve(1);
+          }
+        })
+        .catch((error) => {
+          resolve(error);
+        });
+    })
+
+    // fetch(this.state.issue?.adapter_base_url, {
+    //   method: 'POST',
+    //   headers: {
+    //     Accept: 'application/json',
+    //     'Content-Type': 'application/json',
+    //   },
+    //   body: JSON.stringify(this.state),
+    // }).then((r)=>{
+    //   if (r.status !== 200) {
+    //     throw new Error(`HTTP error! Status: ${r.status}`);
+    //   }
+    //   Promise.all([
+    //     axios.post('/api/v1/tickets/addcomment', {
+    //       _id: this.ticket._id,
+    //       comment: this.state.long_description,
+    //       ticketid: false,
+    //       note: false,
+    //     }),
+    //     axios.put(`/api/v1/tickets/${this.ticket._id}`, {
+    //       status: this.state.statusId,
+    //     }),
+    //     axios.patch(`/api/v1/issue/${this.ticket.transaction_id}?status=RESOLVED`),
+    //   ]);
+    // }).catch((err) => {
+    //   console.log("🚀 ~ file: SingleTicketContainer.jsx:303 ~ SingleTicketContainer ~ submitTheForm ~ err:", err)    
+    // })
   }
 
   onSubscriberChanged(e) {
