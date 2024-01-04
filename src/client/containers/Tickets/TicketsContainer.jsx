@@ -317,7 +317,7 @@ class TicketsContainer extends React.Component {
           }
         />
         <PageContent padding={0} paddingBottom={0} extraClass={'uk-position-relative'}>
-          {/*<SpinLoader active={this.props.loading} />*/}
+          {/* <SpinLoader active={this.props.loading} /> */}
           <Table
             tableRef={ref => (this.ticketsTable = ref)}
             style={{ margin: 0 }}
