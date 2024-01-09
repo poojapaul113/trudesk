@@ -30,3 +30,38 @@ services:
       TRUDESK_EMAIL: ${TRUDESK_EMAIL}
       TRUDESK_USERNAME: ${TRUDESK_USERNAME}
       TRUDESK_PASSWORD: ${TRUDESK_PASSWORD}
+
+
+
+# ADAPTER COMPOSE FILE
+#   mongo:
+#     image: mongo
+#     restart: always
+#     ports:
+#       - 27017:27017
+#     volumes:
+#       - "./data:/data/db"
+#       # - './data:/data/db'
+#       # - './src:/usr/src/trudesk'
+
+#   trudesk-dev-service:
+#     container_name: trudesk-dev-service
+#     build:
+#       context: ./trudesk
+#       dockerfile: Dockerfile
+#     restart: always
+#     ports:
+#       - "8118:8118"
+#     dns:
+#       - "1.1.1.1"
+#       - "8.8.8.8"
+#     environment:
+#       TRUDESK_DOCKER: "true"
+#       TD_MONGODB_SERVER: mongo
+#       TD_MONGODB_DATABASE: trudesk
+#       USE_XFORWARDIP: "true"
+#       REACT_APP_BASE_URL: ${REACT_APP_BASE_URL}
+#       TRUDESK_EMAIL: ${TRUDESK_EMAIL}
+#       TRUDESK_USERNAME: ${TRUDESK_USERNAME}
+#       TRUDESK_PASSWORD: ${TRUDESK_PASSWORD}
+      
