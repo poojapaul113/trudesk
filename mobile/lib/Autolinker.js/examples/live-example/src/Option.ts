@@ -93,7 +93,7 @@ namespace LiveExample {
 		 * @return {String}
 		 */
 		protected getApiDocLink(): string {
-			let configName: string = this.optionName.match( /[^.]+/ )[ 0 ];  // ex: 'urls.schemeMatches' -> 'urls'
+			let configName: string = this.optionName?.match(/[^.]+/)?.[0] ?? '';  // ex: 'urls.schemeMatches' -> 'urls'
 
 			return `http://gregjacobs.github.io/Autolinker.js/docs/#!/api/Autolinker-cfg-${configName}`;
 		}

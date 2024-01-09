@@ -31,7 +31,7 @@ namespace LiveExample {
 
 
 		private $textEl: JQuery;
-		private $valueDisplayEl: JQuery;
+		public $valueDisplayEl: JQuery;
 
 
 		/**
