@@ -45,7 +45,7 @@ namespace LiveExample {
 		constructor( cfg: RadioOptionCfg ) {
 			super( cfg );
 
-			this.options = [].concat( cfg.options );
+			this.options = ([] as any[]).concat(cfg.options);
 			this.defaultValue = cfg.defaultValue || false;
 
 			this.$containerEl.html( this.generateHtml() );
@@ -79,10 +79,10 @@ namespace LiveExample {
 		 *
 		 * @private
 		 * @param {Array} options
-		 * @param {*} defaultValue
+		 * @param {*} _defaultValue
 		 * @return {String[]}
 		 */
-		createRadiosHtml( options: any[], defaultValue: any ) {
+		createRadiosHtml( options: any[], _defaultValue: any ) {
 			return options.map( ( option, idx ) => {
 				return `
 					<input type="radio" id="${this.containerId}-radio-${option}" name="${this.containerId}-radio" data-option-idx="${idx}" ${ option === this.defaultValue ? 'checked' : '' }> 
